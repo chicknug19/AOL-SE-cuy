@@ -1,0 +1,11 @@
+# Node & Frontend
+node_modules/
+dist/
+.env
+
+# Visual Studio & Backend
+bin/
+obj/
+.vs/
+*.user
+appsettings.Development.json
