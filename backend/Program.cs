@@ -1,3 +1,6 @@
+using Microsoft.EntityFrameworkCore;
+using backend.Data;
+
 
 namespace backend
 {
@@ -6,6 +9,8 @@ namespace backend
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
+            builder.Services.AddDbContext<PerpusDbContext>(options =>
+                options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
             // Add services to the container.
 
