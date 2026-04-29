@@ -20,7 +20,7 @@ namespace backend.Models
 
         // Status: "Berjalan", "Selesai", "Terlambat", "Hilang"
         public string StatusTransaksi { get; set; } = "Berjalan";
-
+        // ini kita kasih denda klo ada yang telat balikkin buku 
         public int Denda { get; set; } = 0;
     }
 }
