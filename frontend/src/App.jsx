@@ -5,6 +5,10 @@ import BookDetail from './pages/bookDetail';
 import SearchPage from './pages/searchpage';
 import AdminLogin from './pages/adminLogin';
 import AdminHomepage from './pages/adminHomepage';
+import AdminBorrowpage from './pages/adminBorrowpage';
+import ReturnBookspage from './pages/returnBookspage';
+import AdminMembersPage from './pages/adminMembersPage';
+import CatalogInventoryPage from './pages/catalogInventoryPage';
 
 function App() {
   const [currentPage, setCurrentPage] = useState('login');
@@ -17,7 +21,19 @@ function App() {
     return <AdminLogin onLogin={() => setCurrentPage('adminHome')} onUserClick={() => setCurrentPage('login')} />;
   }
   if (currentPage === 'adminHome') {
-    return <AdminHomepage onLogout={() => setCurrentPage('login')} />;
+    return <AdminHomepage onLogout={() => setCurrentPage('login')} onNavigate={setCurrentPage} />;
+  }
+  if (currentPage === 'adminBorrow') {
+    return <AdminBorrowpage onLogout={() => setCurrentPage('login')} onNavigate={setCurrentPage} />;
+  }
+  if (currentPage === 'adminReturn') {
+    return <ReturnBookspage onLogout={() => setCurrentPage('login')} onNavigate={setCurrentPage} />;
+  }
+  if (currentPage === 'adminMembers') {
+    return <AdminMembersPage onLogout={() => setCurrentPage('login')} onNavigate={setCurrentPage} />;
+  }
+  if (currentPage === 'adminCatalogs') {
+    return <CatalogInventoryPage onLogout={() => setCurrentPage('login')} onNavigate={setCurrentPage} />;
   }
   if (currentPage === 'detail') {
     return <BookDetail onBack={() => setCurrentPage('home')} />;
