@@ -1,5 +1,5 @@
 import React from 'react';
-import bookCrypto from './assets/book_crypto.png';
+import bookCrypto from '../assets/book_crypto.png';
 
 const BookDetail = ({ onBack }) => {
   return (

@@ -1,9 +1,17 @@
-import React from 'react';
-import heroBook from './assets/hero_book.png';
-import book1 from './assets/book_1.png';
-import book2 from './assets/book_2.png';
+import React, { useState } from 'react';
+import heroBook from '../assets/hero_book.png';
+import book1 from '../assets/book_1.png';
+import book2 from '../assets/book_2.png';
 
-const Homepage = ({ onBookClick }) => {
+const Homepage = ({ onBookClick, onSearch }) => {
+  const [query, setQuery] = useState('');
+
+  const handleSearchSubmit = (e) => {
+    if (e.key === 'Enter') {
+      onSearch(query);
+    }
+  };
+
   return (
     <div className="w-full min-h-screen bg-[#F2FBFA] font-sans text-gray-800 pb-12">
       
@@ -35,6 +43,9 @@ const Homepage = ({ onBookClick }) => {
             type="text" 
             placeholder="Search for books, authors, or topics" 
             className="w-full bg-transparent outline-none border-none ml-3 text-gray-700 placeholder-gray-400 text-sm"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={handleSearchSubmit}
           />
         </div>
 
