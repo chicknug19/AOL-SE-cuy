@@ -1,10 +1,41 @@
-import React from 'react';
+import React, { useState } from 'react';
 import loginBg from '../assets/login_bg.png';
 
 const Login = ({ onLogin, onAdminClick }) => {
+  // State untuk menyimpan input user
+  const [nim, setNim] = useState('');
+  const [password, setPassword] = useState('');
+  
+  // State untuk menyimpan pesan error
+  const [errors, setErrors] = useState({ nim: '', password: '' });
+
   const handleSubmit = (e) => {
     e.preventDefault();
-    onLogin();
+    
+    // Reset error state setiap kali submit
+    let newErrors = { nim: '', password: '' };
+    let isValid = true;
+
+    // Validasi NIM: Harus angka dan tepat 10 digit
+    const nimRegex = /^\d{10}$/;
+    if (!nim || !nimRegex.test(nim)) {
+      newErrors.nim = "Please enter a valid 10-digit NIM.";
+      isValid = false;
+    }
+
+    // Validasi Password: Harus sesuai dengan NIM (Simulasi Frontend)
+    // Catatan: Jika menggunakan AJAX/API ASP.NET, logika fetch ditaruh di blok ini
+    if (isValid && password !== nim) {
+      newErrors.password = "Incorrect password.";
+      isValid = false;
+    }
+
+    setErrors(newErrors);
+
+    // Jika semua validasi lolos, jalankan fungsi login
+    if (isValid) {
+      onLogin();
+    }
   };
 
   return (
@@ -12,7 +43,6 @@ const Login = ({ onLogin, onAdminClick }) => {
       
       {/* Top Header */}
       <header className="w-full bg-[#C1272D] text-white py-3 px-6 md:px-12 flex flex-col md:flex-row items-center justify-between z-20 shadow-md">
-        
         {/* Left: Logo & Title */}
         <div className="flex items-center gap-3 mb-4 md:mb-0">
           <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center p-1">
@@ -50,7 +80,7 @@ const Login = ({ onLogin, onAdminClick }) => {
         {/* Background Image & Overlay */}
         <div className="absolute inset-0 z-0">
           <img src={loginBg} alt="Library Background" className="w-full h-full object-cover" />
-          <div className="absolute inset-0 bg-white/40"></div> {/* Semi-transparent white overlay to ensure text is readable */}
+          <div className="absolute inset-0 bg-white/40"></div>
         </div>
 
         {/* Floating Welcome Text */}
@@ -60,30 +90,36 @@ const Login = ({ onLogin, onAdminClick }) => {
         </div>
 
         {/* Login Box */}
-        <div className="relative z-10 bg-white w-[90%] max-w-[500px] px-8 py-10 shadow-2xl">
+        <div className="relative z-10 bg-white w-[90%] max-w-[500px] px-8 py-10 shadow-2xl rounded-sm">
           <h2 className="text-2xl font-bold text-center text-black">Login</h2>
           
           <div className="w-full h-0.5 bg-black my-6"></div>
 
           <form className="flex flex-col gap-5" onSubmit={handleSubmit}>
             {/* NIM Input */}
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-1">
               <label className="text-sm font-bold text-black">NIM</label>
               <input 
                 type="text" 
+                value={nim}
+                onChange={(e) => setNim(e.target.value)}
                 placeholder="Enter your NIM" 
-                className="w-full border border-gray-200 rounded px-4 py-2.5 text-sm outline-none focus:border-gray-400 placeholder-gray-400"
+                className={`w-full border ${errors.nim ? 'border-red-500' : 'border-gray-200'} rounded px-4 py-2.5 text-sm outline-none focus:border-gray-400 placeholder-gray-400`}
               />
+              {errors.nim && <span className="text-xs text-red-500 font-medium">{errors.nim}</span>}
             </div>
 
             {/* Password Input */}
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-1">
               <label className="text-sm font-bold text-black">Password</label>
               <input 
                 type="password" 
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                 placeholder="Enter your password" 
-                className="w-full border border-gray-200 rounded px-4 py-2.5 text-sm outline-none focus:border-gray-400 placeholder-gray-400"
+                className={`w-full border ${errors.password ? 'border-red-500' : 'border-gray-200'} rounded px-4 py-2.5 text-sm outline-none focus:border-gray-400 placeholder-gray-400`}
               />
+              {errors.password && <span className="text-xs text-red-500 font-medium">{errors.password}</span>}
             </div>
 
             {/* Remember Me */}
