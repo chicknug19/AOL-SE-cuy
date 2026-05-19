@@ -1,8 +1,8 @@
 import React from 'react';
-import headerBg from './assets/header_bg.png';
-import divider1 from './assets/divider_1.png';
-import booksSide from './assets/books_side.png';
-import footerDivider from './assets/footer_divider.png';
+import headerBg from '../assets/header_bg.png';
+import divider1 from '../assets/divider_1.png';
+import booksSide from '../assets/books_side.png';
+import footerDivider from '../assets/footer_divider.png';
 
 const AboutUs = () => {
   return (

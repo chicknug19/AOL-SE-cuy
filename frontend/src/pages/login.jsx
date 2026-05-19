@@ -1,7 +1,12 @@
 import React from 'react';
-import loginBg from './assets/login_bg.png';
+import loginBg from '../assets/login_bg.png';
 
-const Login = () => {
+const Login = ({ onLogin }) => {
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onLogin();
+  };
+
   return (
     <div className="w-full min-h-screen bg-white font-sans text-gray-800 flex flex-col">
       
@@ -60,7 +65,7 @@ const Login = () => {
           
           <div className="w-full h-0.5 bg-black my-6"></div>
 
-          <form className="flex flex-col gap-5">
+          <form className="flex flex-col gap-5" onSubmit={handleSubmit}>
             {/* NIM Input */}
             <div className="flex flex-col gap-2">
               <label className="text-sm font-bold text-black">NIM</label>
