@@ -1,7 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using backend.Data;
 
-
 namespace backend
 {
     public class Program
@@ -12,16 +11,26 @@ namespace backend
             builder.Services.AddDbContext<PerpusDbContext>(options =>
                 options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-            // Add services to the container.
+            // --- TAMBAHAN CORS START ---
+            // Kita izinkan frontend React untuk mengakses API ini
+            builder.Services.AddCors(options =>
+            {
+                options.AddPolicy("AllowReactApp",
+                    policy =>
+                    {
+                        policy.WithOrigins("http://localhost:3000", "http://localhost:5173") // Port standar React/Vite
+                              .AllowAnyHeader()
+                              .AllowAnyMethod();
+                    });
+            });
+            // --- TAMBAHAN CORS END ---
 
             builder.Services.AddControllers();
-            // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
 
             var app = builder.Build();
 
-            // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())
             {
                 app.UseSwagger();
@@ -30,11 +39,11 @@ namespace backend
 
             app.UseHttpsRedirection();
 
+            // --- TAMBAHAN CORS PADA PIPELINE ---
+            app.UseCors("AllowReactApp");
+
             app.UseAuthorization();
-
-
             app.MapControllers();
-
             app.Run();
         }
     }
