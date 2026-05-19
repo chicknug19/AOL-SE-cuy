@@ -1,7 +1,8 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using backend.Data;
+﻿using backend.Data;
+using backend.DTOs;
 using backend.Models;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace backend.Controllers
 {
@@ -51,13 +52,23 @@ namespace backend.Controllers
             return user;
         }
 
-        // FUNGSI 4: Mendaftarkan user baru (Bisa dipanggil Frontend jika user baru pertama kali login SSO)
         [HttpPost]
-        public async Task<ActionResult<User>> TambahUser(User user)
+        public async Task<ActionResult<User>> TambahUser(UserCreateDto dto)
         {
-            // Default keamanan: pastikan yang daftar otomatis jadi Member, bukan Admin
-            user.Role = "Member";
-            user.IsBlacklisted = false;
+            // Cek apakah email sudah terdaftar sebelumnya (Best Practice)
+            var userExists = await _context.Users.AnyAsync(u => u.Email == dto.Email);
+            if (userExists)
+            {
+                return BadRequest("Email ini sudah terdaftar di sistem Bookugers.");
+            }
+
+            var user = new User
+            {
+                Nama = dto.Nama,
+                Email = dto.Email,
+                Role = "Member",
+                IsBlacklisted = false
+            };
 
             _context.Users.Add(user);
             await _context.SaveChangesAsync();

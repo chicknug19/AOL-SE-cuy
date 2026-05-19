@@ -1,7 +1,8 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using backend.Data;
+﻿using backend.Data;
+using backend.DTOs;
 using backend.Models;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace backend.Controllers
 {
@@ -16,11 +17,27 @@ namespace backend.Controllers
             _context = context;
         }
 
-        // FUNGSI 1: Mendapatkan semua riwayat transaksi (Untuk tabel di Admin Dashboard)
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Transaksi>>> GetTransaksi()
+        public async Task<ActionResult<IEnumerable<TransaksiReadDto>>> GetTransaksi()
         {
-            return await _context.Transaksis.ToListAsync();
+            return await (from t in _context.Transaksis
+                          join u in _context.Users on t.UserId equals u.Id
+                          join ib in _context.ItemBukus on t.ItemBukuId equals ib.Id
+                          join b in _context.Bukus on ib.BukuId equals b.Id
+                          select new TransaksiReadDto
+                          {
+                              Id = t.Id,
+                              UserId = t.UserId,
+                              NamaUser = u.Nama,
+                              ItemBukuId = t.ItemBukuId,
+                              JudulBuku = b.Judul,
+                              KodeBarcode = ib.KodeBarcode,
+                              TanggalPinjam = t.TanggalPinjam,
+                              BatasKembali = t.BatasKembali,
+                              TanggalKembali = t.TanggalKembali,
+                              StatusTransaksi = t.StatusTransaksi,
+                              Denda = t.Denda
+                          }).ToListAsync();
         }
 
         // FUNGSI 2: Mendapatkan transaksi milik 1 Mahasiswa (Untuk Member Dashboard)
@@ -33,37 +50,31 @@ namespace backend.Controllers
 
         // FUNGSI 3: PROSES PEMINJAMAN BUKU (Checkout)
         [HttpPost("pinjam")]
-        public async Task<ActionResult> PinjamBuku([FromBody] PinjamRequest request)
+        public async Task<ActionResult> PinjamBuku([FromBody] TransaksiCreateDto dto)
         {
-            // 1. Validasi Mahasiswa
-            var user = await _context.Users.FindAsync(request.UserId);
+            var user = await _context.Users.FindAsync(dto.UserId);
             if (user == null) return NotFound("User tidak ditemukan.");
-            if (user.IsBlacklisted) return BadRequest("Akses ditolak! Mahasiswa ini sedang di-blacklist.");
+            if (user.IsBlacklisted) return BadRequest("Akses ditolak! Mahasiswa di-blacklist.");
 
-            // 2. Validasi Fisik Buku
-            var itemBuku = await _context.ItemBukus.FindAsync(request.ItemBukuId);
+            var itemBuku = await _context.ItemBukus.FindAsync(dto.ItemBukuId);
             if (itemBuku == null) return NotFound("Buku fisik tidak ditemukan.");
-            if (itemBuku.Status != "Tersedia") return BadRequest("Maaf, fisik buku ini sedang dipinjam atau hilang.");
+            if (itemBuku.Status != "Tersedia") return BadRequest("Fisik buku sedang dipinjam.");
 
-            // 3. Catat Transaksi Baru
             var transaksi = new Transaksi
             {
-                UserId = request.UserId,
-                ItemBukuId = request.ItemBukuId,
+                UserId = dto.UserId,
+                ItemBukuId = dto.ItemBukuId,
                 TanggalPinjam = DateTime.Now,
-                // Buku wajib dikembalikan dalam 7 hari
                 BatasKembali = DateTime.Now.AddDays(7),
                 StatusTransaksi = "Berjalan",
                 Denda = 0
             };
 
-            // 4. Ubah status fisik buku menjadi dipinjam
             itemBuku.Status = "Dipinjam";
-
             _context.Transaksis.Add(transaksi);
             await _context.SaveChangesAsync();
 
-            return Ok(transaksi);
+            return Ok("Buku berhasil dipinjam.");
         }
 
         // FUNGSI 4: PROSES PENGEMBALIAN BUKU (Scan Barcode Return)
