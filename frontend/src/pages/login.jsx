@@ -1,7 +1,7 @@
 import React from 'react';
 import loginBg from '../assets/login_bg.png';
 
-const Login = ({ onLogin }) => {
+const Login = ({ onLogin, onAdminClick }) => {
   const handleSubmit = (e) => {
     e.preventDefault();
     onLogin();
@@ -93,12 +93,21 @@ const Login = ({ onLogin }) => {
             </div>
 
             {/* Submit Button */}
-            <button 
-              type="submit" 
-              className="w-full bg-black text-white font-bold py-3 mt-4 hover:bg-gray-800 transition-colors"
-            >
-              Sign In
-            </button>
+            <div className="flex flex-col items-center gap-2 mt-2">
+              <button 
+                type="submit" 
+                className="w-full bg-black text-white font-bold text-sm py-3 rounded hover:bg-gray-800 transition-colors tracking-wide"
+              >
+                Sign In
+              </button>
+              <button 
+                type="button"
+                onClick={onAdminClick}
+                className="text-xs text-gray-500 font-semibold hover:text-black transition-colors mt-2"
+              >
+                Login as Admin instead
+              </button>
+            </div>
 
             {/* Forgot Password Link */}
             <div className="text-center mt-2">
