@@ -9,22 +9,41 @@ const Login = ({ onLogin, onAdminClick }) => {
   // State untuk menyimpan pesan error
   const [errors, setErrors] = useState({ nim: '', password: '' });
 
+  // Fungsi khusus untuk menangani perubahan input NIM (Real-time Validation)
+  const handleNimChange = (e) => {
+    const value = e.target.value;
+    setNim(value);
+
+    // Mengecek apakah input kosong
+    if (value === '') {
+      setErrors((prev) => ({ ...prev, nim: '' }));
+    } 
+    // Mengecek apakah ada karakter selain angka
+    else if (!/^\d+$/.test(value)) {
+      setErrors((prev) => ({ ...prev, nim: 'NIM must contain only numbers.' }));
+    } 
+    // Mengecek apakah jumlah digit kurang atau lebih dari 10
+    else if (value.length !== 10) {
+      setErrors((prev) => ({ ...prev, nim: 'Please input exactly a 10-digit NIM.' }));
+    } 
+
+    else {
+      setErrors((prev) => ({ ...prev, nim: '' }));
+    }
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     
-    // Reset error state setiap kali submit
-    let newErrors = { nim: '', password: '' };
+    let newErrors = { nim: errors.nim, password: '' };
     let isValid = true;
 
-    // Validasi NIM: Harus angka dan tepat 10 digit
     const nimRegex = /^\d{10}$/;
     if (!nim || !nimRegex.test(nim)) {
       newErrors.nim = "Please enter a valid 10-digit NIM.";
       isValid = false;
     }
 
-    // Validasi Password: Harus sesuai dengan NIM (Simulasi Frontend)
-    // Catatan: Jika menggunakan AJAX/API ASP.NET, logika fetch ditaruh di blok ini
     if (isValid && password !== nim) {
       newErrors.password = "Incorrect password.";
       isValid = false;
@@ -32,7 +51,6 @@ const Login = ({ onLogin, onAdminClick }) => {
 
     setErrors(newErrors);
 
-    // Jika semua validasi lolos, jalankan fungsi login
     if (isValid) {
       onLogin();
     }
@@ -102,7 +120,7 @@ const Login = ({ onLogin, onAdminClick }) => {
               <input 
                 type="text" 
                 value={nim}
-                onChange={(e) => setNim(e.target.value)}
+                onChange={handleNimChange}
                 placeholder="Enter your NIM" 
                 className={`w-full border ${errors.nim ? 'border-red-500' : 'border-gray-200'} rounded px-4 py-2.5 text-sm outline-none focus:border-gray-400 placeholder-gray-400`}
               />
@@ -115,7 +133,10 @@ const Login = ({ onLogin, onAdminClick }) => {
               <input 
                 type="password" 
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  if (errors.password) setErrors(prev => ({ ...prev, password: '' })); // Hilangkan error saat ngetik ulang
+                }}
                 placeholder="Enter your password" 
                 className={`w-full border ${errors.password ? 'border-red-500' : 'border-gray-200'} rounded px-4 py-2.5 text-sm outline-none focus:border-gray-400 placeholder-gray-400`}
               />
