@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using backend.Data;
 using backend.Models;
+using backend.DTOs; // Panggil namespace DTOs
 
 namespace backend.Controllers
 {
@@ -11,27 +12,50 @@ namespace backend.Controllers
     {
         private readonly PerpusDbContext _context;
 
-        // Menyambungkan controller dengan database (DbContext)
         public BukuController(PerpusDbContext context)
         {
             _context = context;
         }
 
-        // FUNGSI 1: Mengambil semua data buku (GET)
+        // GET: api/Buku (Mengembalikan DTO)
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Buku>>> GetBuku()
+        public async Task<ActionResult<IEnumerable<BukuReadDto>>> GetBuku()
         {
-            return await _context.Bukus.ToListAsync();
+            return await _context.Bukus
+                .Select(b => new BukuReadDto
+                {
+                    Id = b.Id,
+                    Judul = b.Judul,
+                    Pengarang = b.Pengarang,
+                    TahunTerbit = b.TahunTerbit
+                }).ToListAsync();
         }
 
-        // FUNGSI 2: Menambahkan buku baru (POST)
+        // POST: api/Buku (Menerima CreateDto, Mengembalikan ReadDto)
         [HttpPost]
-        public async Task<ActionResult<Buku>> TambahBuku(Buku buku)
+        public async Task<ActionResult<BukuReadDto>> TambahBuku(BukuCreateUpdateDto dto)
         {
+            // Map dari DTO ke Model Database
+            var buku = new Buku
+            {
+                Judul = dto.Judul,
+                Pengarang = dto.Pengarang,
+                TahunTerbit = dto.TahunTerbit
+            };
+
             _context.Bukus.Add(buku);
             await _context.SaveChangesAsync();
 
-            return Ok(buku);
+            // Map kembali ke ReadDto untuk respon yang aman
+            var response = new BukuReadDto
+            {
+                Id = buku.Id,
+                Judul = buku.Judul,
+                Pengarang = buku.Pengarang,
+                TahunTerbit = buku.TahunTerbit
+            };
+
+            return Ok(response);
         }
     }
 }
