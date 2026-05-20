@@ -38,6 +38,31 @@ namespace backend.Controllers
             return user;
         }
 
+        // FUNGSI BARU: Mendapatkan daftar member dengan statistik denda dan peminjaman
+        [HttpGet("members-stats")]
+        public async Task<ActionResult<IEnumerable<MemberReadDto>>> GetMembersWithStats()
+        {
+            var members = await _context.Users
+                .Where(u => u.Role == "Member") // Hanya ambil yang role-nya Member
+                .Select(u => new MemberReadDto
+                {
+                    Id = u.Id,
+                    Nama = u.Nama,
+                    Email = u.Email,
+                    IsBlacklisted = u.IsBlacklisted,
+                    // Hitung buku yang sedang dipinjam (Status = "Berjalan" atau "Terlambat")
+                    ActiveBorrowedBooks = _context.Transaksis
+                        .Count(t => t.UserId == u.Id && (t.StatusTransaksi == "Berjalan" || t.StatusTransaksi == "Terlambat")),
+                    // Jumlahkan semua denda dari transaksi yang berstatus "Terlambat"
+                    TotalFines = _context.Transaksis
+                        .Where(t => t.UserId == u.Id && t.StatusTransaksi == "Terlambat")
+                        .Sum(t => (int?)t.Denda) ?? 0 // Gunakan int? untuk menghindari error null jika tidak ada denda
+                })
+                .ToListAsync();
+
+            return Ok(members);
+        }
+
         // FUNGSI 3: Mendapatkan profil user berdasarkan Email (Sangat vital untuk Login SSO)
         [HttpGet("email/{email}")]
         public async Task<ActionResult<User>> GetUserByEmail(string email)
