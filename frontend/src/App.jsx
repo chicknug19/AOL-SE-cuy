@@ -3,19 +3,19 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 
 // Import semua halaman dari folder pages
 // (Pastikan nama import ini persis sama dengan nama file yang baru kamu rename tadi)
-import HomePage from './pages/HomePageTemp';
+import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
 import AboutUsPage from './pages/AboutUsPage';
-import SearchPage from './pages/SearchPageTemp';
-import BookDetailPage from './pages/BookDetailPageTemp';
+import SearchPage from './pages/SearchPage';
+import BookDetailPage from './pages/BookDetailPage';
 
 // Import halaman Admin
-import AdminLoginPage from './pages/AdminLoginPageTemp';
-import AdminHomePage from './pages/AdminHomePageTemp';
-import AdminBorrowPage from './pages/AdminBorrowPageTemp';
-import ReturnBooksPage from './pages/ReturnBooksPageTemp';
-import AdminMembersPage from './pages/AdminMembersPageTemp';
-import CatalogInventoryPage from './pages/CatalogInventoryPageTemp';
+import AdminLoginPage from './pages/AdminLoginPage';
+import AdminHomePage from './pages/AdminHomePage';
+import AdminBorrowPage from './pages/AdminBorrowPage';
+import ReturnBooksPage from './pages/ReturnBooksPage';
+import AdminMembersPage from './pages/AdminMembersPage';
+import CatalogInventoryPage from './pages/CatalogInventoryPage';
 
 const App = () => {
   return (
