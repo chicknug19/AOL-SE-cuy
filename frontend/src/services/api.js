@@ -1,7 +1,7 @@
 import axios from 'axios'; // INI YANG BENAR
 
-// Ganti port localhost ini sesuai dengan port backend ASP.NET kamu!
-const BASE_URL = 'https://localhost:7123/api';
+// Mengambil URL dari file .env (Vercel). 
+const BASE_URL = import.meta.env.VITE_API_URL || 'https://localhost:7123/api';
 
 const api = axios.create({
   baseURL: BASE_URL,

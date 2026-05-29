@@ -44,6 +44,24 @@ namespace backend
 
             app.UseAuthorization();
             app.MapControllers();
+
+            // --- AUTO MIGRATION UNTUK AZURE ---
+            using (var scope = app.Services.CreateScope())
+            {
+                var services = scope.ServiceProvider;
+                try
+                {
+                    var context = services.GetRequiredService<PerpusDbContext>();
+                    context.Database.Migrate(); // Ini akan otomatis mengaplikasikan Add-Migration terbaru ke Azure!
+                }
+                catch (Exception ex)
+                {
+                    var logger = services.GetRequiredService<ILogger<Program>>();
+                    logger.LogError(ex, "Terjadi kesalahan saat melakukan migrasi database.");
+                }
+            }
+
+
             app.Run();
         }
     }
