@@ -2,10 +2,12 @@
 node_modules/
 dist/
 .env
+.env.local
 
 # Visual Studio & Backend
 bin/
 obj/
 .vs/
 *.user
+appsettings.json
 appsettings.Development.json

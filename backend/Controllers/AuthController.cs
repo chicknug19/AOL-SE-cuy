@@ -22,52 +22,65 @@ namespace backend.Controllers
             _config = config;
         }
 
-        [HttpPost("login-sso")]
-        public async Task<IActionResult> LoginSSO([FromBody] UserCreateDto request)
+        // --- PINTU 1: LOGIN MAHASISWA (NIM + Password) ---
+        [HttpPost("login-mahasiswa")]
+        public async Task<IActionResult> LoginMahasiswa([FromBody] LoginMahasiswaDto request)
         {
-            // 1. Validasi domain email otomatis berjalan dari DTO [UserCreateDto]
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.NIM == request.NIM && u.Role == "Member");
 
-            // 2. Cari user di database, jika belum ada, otomatis daftarkan (Auto-Registration via SSO)
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == request.Email);
-            if (user == null)
+            // Cek apakah user ada dan password cocok
+            if (user == null || user.Password != request.Password)
             {
-                user = new Models.User
-                {
-                    Nama = request.Nama,
-                    Email = request.Email,
-                    Role = "Member"
-                };
-                _context.Users.Add(user);
-                await _context.SaveChangesAsync();
+                return Unauthorized("NIM atau Password salah!");
             }
 
-            // 3. GENERATE JWT TOKEN
+            if (user.IsBlacklisted)
+            {
+                return BadRequest("Akun Anda di-blacklist.");
+            }
+
+            var token = GenerateJwtToken(user);
+            return Ok(new { Token = token, User = user });
+        }
+
+        // --- PINTU 2: LOGIN ADMIN (Email + Password) ---
+        [HttpPost("login-admin")]
+        public async Task<IActionResult> LoginAdmin([FromBody] LoginAdminDto request)
+        {
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == request.Email && u.Role == "Admin");
+
+            if (user == null || user.Password != request.Password)
+            {
+                return Unauthorized("Email atau Password salah, atau Anda bukan Admin!");
+            }
+
+            var token = GenerateJwtToken(user);
+            return Ok(new { Token = token, User = user });
+        }
+
+        // --- FUNGSI BANTUAN: Generate JWT (Dipisah agar kode lebih bersih) ---
+        private string GenerateJwtToken(Models.User user)
+        {
             var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]!));
             var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
 
-            // Menyimpan klaim data identitas user di dalam token
             var claims = new[]
             {
                 new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
                 new Claim(ClaimTypes.Email, user.Email),
-                new Claim(ClaimTypes.Role, user.Role) // Menyimpan hak akses (Admin/Member)
+                new Claim(ClaimTypes.Role, user.Role),
+                // Tambahkan NIM ke dalam token jika ada
+                new Claim("NIM", user.NIM ?? "")
             };
 
             var token = new JwtSecurityToken(
                 issuer: _config["Jwt:Issuer"],
                 audience: _config["Jwt:Audience"],
                 claims: claims,
-                expires: DateTime.Now.AddDays(1), // Token hangus dalam 1 hari
+                expires: DateTime.Now.AddDays(1),
                 signingCredentials: credentials);
 
-            var jwtString = new JwtSecurityTokenHandler().WriteToken(token);
-
-            // 4. Kembalikan token dan data user ke Frontend
-            return Ok(new
-            {
-                Token = jwtString,
-                User = user
-            });
+            return new JwtSecurityTokenHandler().WriteToken(token);
         }
     }
 }

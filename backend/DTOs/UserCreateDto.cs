@@ -13,5 +13,11 @@ namespace backend.DTOs
         [RegularExpression(@"^[a-zA-Z0-9._%+-]+@(binus\.ac\.id|binus\.edu)$",
             ErrorMessage = "Pendaftaran hanya diperbolehkan menggunakan email resmi BINUS.")]
         public string Email { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "NIM wajib diisi.")]
+        public string NIM { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Password wajib diisi.")]
+        public string Password { get; set; } = string.Empty;
     }
 }
