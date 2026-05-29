@@ -20,10 +20,10 @@ jobs:
           dotnet-version: '8.x' 
 
       - name: Build with dotnet
-        run: dotnet build --configuration Release
+        run: dotnet build "folder/file.csproj" --configuration Release
 
       - name: Publish with dotnet
-        run: dotnet publish -c Release -o "${{ env.GITHUB_WORKSPACE }}/myapp"
+        run: dotnet publish "folder/file.csproj" -c Release -o "${{ env.GITHUB_WORKSPACE }}/myapp"
 
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
