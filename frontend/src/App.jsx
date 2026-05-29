@@ -6,7 +6,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
 import AboutUsPage from './pages/AboutUsPage';
-import SearchPage from './pages/SearchPage';
+import SearchPage from './pages/SearchPageTemp';
 import BookDetailPage from './pages/BookDetailPage';
 
 // Import halaman Admin
