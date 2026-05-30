@@ -19,22 +19,24 @@ const AdminLoginPage = () => {
     setErrorMsg('');
 
     try {
-      // Karena sebelumnya kita membuat login-sso tanpa password di backend (berdasarkan email & nama),
-      // kita sesuaikan payload-nya di sini.
-      const response = await api.post('/auth/login-sso', {
-        nama: "Admin Bookugers", // Hardcode sementara karena ini Admin
-        email: email
-      });
+      // 1. Sesuaikan payload dengan isi LoginAdminDto di backend
+      const payload = {
+        email: email,
+        password: password
+      };
 
-      // Simpan JWT Token ke memori browser agar request selanjutnya dikenali backend
+      // 2. Tembak ke endpoint login-admin yang benar
+      const response = await api.post('/auth/login-admin', payload);
+
+      // Simpan JWT Token ke memori browser
       localStorage.setItem('token', response.data.token);
       
       // Jika berhasil, arahkan ke dashboard admin
       navigate('/admin/dashboard');
       
     } catch (error) {
-      // Tangkap pesan error dari backend (misal: "Email tidak valid")
-      setErrorMsg(error.response?.data || 'Terjadi kesalahan saat login.');
+      // Tangkap pesan error dari backend
+      setErrorMsg(error.response?.data || 'Email atau Password salah.');
     } finally {
       setIsLoading(false);
     }

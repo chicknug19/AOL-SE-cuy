@@ -12,5 +12,7 @@ namespace backend.Models
         public string Pengarang { get; set; } = string.Empty;
 
         public string TahunTerbit { get; set; } = string.Empty;
+
+        public string? CoverUrl { get; set; }
     }
 }
