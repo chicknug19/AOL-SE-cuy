@@ -2,7 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using backend.Data;
 using backend.Models;
-using backend.DTOs; // Panggil namespace DTOs
+using backend.DTOs;
 
 namespace backend.Controllers
 {
@@ -17,7 +17,7 @@ namespace backend.Controllers
             _context = context;
         }
 
-        // GET: api/Buku (Mengembalikan DTO)
+        // GET: api/Buku (Mengembalikan DTO dengan lengkap)
         [HttpGet]
         public async Task<ActionResult<IEnumerable<BukuReadDto>>> GetBuku()
         {
@@ -27,11 +27,41 @@ namespace backend.Controllers
                     Id = b.Id,
                     Judul = b.Judul,
                     Pengarang = b.Pengarang,
-                    TahunTerbit = b.TahunTerbit
+                    TahunTerbit = b.TahunTerbit,
+                    CoverUrl = b.CoverUrl,    
+                    Deskripsi = b.Deskripsi,  
+                    Isbn = b.Isbn,            
+                    Kategori = b.Kategori     
                 }).ToListAsync();
         }
 
-        // POST: api/Buku (Menerima CreateDto, Mengembalikan ReadDto)
+        // GET: api/Buku/5 (Untuk Halaman Book Detail Page)
+        [HttpGet("{id}")]
+        public async Task<ActionResult<BukuReadDto>> GetBukuById(int id)
+        {
+            var buku = await _context.Bukus.FindAsync(id);
+
+            if (buku == null)
+            {
+                return NotFound("Buku tidak ditemukan.");
+            }
+
+            var response = new BukuReadDto
+            {
+                Id = buku.Id,
+                Judul = buku.Judul,
+                Pengarang = buku.Pengarang,
+                TahunTerbit = buku.TahunTerbit,
+                CoverUrl = buku.CoverUrl,
+                Deskripsi = buku.Deskripsi,
+                Isbn = buku.Isbn,
+                Kategori = buku.Kategori
+            };
+
+            return Ok(response);
+        }
+
+        // POST: api/Buku (Menerima CreateDto, Mengembalikan ReadDto lengkap)
         [HttpPost]
         public async Task<ActionResult<BukuReadDto>> TambahBuku(BukuCreateUpdateDto dto)
         {
@@ -40,19 +70,27 @@ namespace backend.Controllers
             {
                 Judul = dto.Judul,
                 Pengarang = dto.Pengarang,
-                TahunTerbit = dto.TahunTerbit
+                TahunTerbit = dto.TahunTerbit,
+                CoverUrl = dto.CoverUrl,
+                Deskripsi = dto.Deskripsi,
+                Isbn = dto.Isbn,
+                Kategori = dto.Kategori
             };
 
             _context.Bukus.Add(buku);
             await _context.SaveChangesAsync();
 
-            // Map kembali ke ReadDto untuk respon yang aman
+         
             var response = new BukuReadDto
             {
                 Id = buku.Id,
                 Judul = buku.Judul,
                 Pengarang = buku.Pengarang,
-                TahunTerbit = buku.TahunTerbit
+                TahunTerbit = buku.TahunTerbit,
+                CoverUrl = buku.CoverUrl,    
+                Deskripsi = buku.Deskripsi,  
+                Isbn = buku.Isbn,            
+                Kategori = buku.Kategori 
             };
 
             return Ok(response);
