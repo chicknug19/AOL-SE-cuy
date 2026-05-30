@@ -6,6 +6,44 @@ import api from '../services/api';
 const AdminBorrowPage = ({ onLogout }) => {
   const navigate = useNavigate(); // 3. INISIALISASI NAVIGATE
 
+  useEffect(() => {
+    const fetchDashboard = async () => {
+      try {
+        // --- TAMBAHKAN SATPAM VIRTUAL UNTUK ADMIN DI SINI ---
+        const token = localStorage.getItem('token');
+        if (!token) {
+          navigate('/admin');
+          return;
+        }
+
+        // Decode token untuk mendapatkan ID
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        const userId = payload["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"] || payload.nameid;
+
+        // Cek Role user tersebut ke backend
+        const userRes = await api.get(`/user/${userId}`);
+        if (userRes.data.role !== "Admin") {
+          // Jika bukan admin, tendang ke halaman home member!
+          navigate('/');
+          return;
+        }
+        // ---------------------------------------------------
+
+        // Jika dia benar-benar Admin, baru ambil data dashboard
+        const response = await api.get('/dashboard');
+        setDashboardData(response.data);
+      } catch (error) {
+        console.error("Gagal memuat data dashboard:", error);
+        localStorage.removeItem('token');
+        navigate('/admin');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchDashboard();
+  }, [navigate]);
+
   // State untuk Member
   const [memberIdInput, setMemberIdInput] = useState('');
   const [memberData, setMemberData] = useState(null);
