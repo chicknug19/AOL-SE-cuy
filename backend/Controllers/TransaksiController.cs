@@ -36,16 +36,34 @@ namespace backend.Controllers
                               BatasKembali = t.BatasKembali,
                               TanggalKembali = t.TanggalKembali,
                               StatusTransaksi = t.StatusTransaksi,
-                              Denda = t.Denda
+                              Denda = t.Denda,
+                              CoverUrl = b.CoverUrl
                           }).ToListAsync();
         }
 
-        // FUNGSI 2: Mendapatkan transaksi milik 1 Mahasiswa (Untuk Member Dashboard)
         [HttpGet("user/{userId}")]
-        public async Task<ActionResult<IEnumerable<Transaksi>>> GetTransaksiByUser(int userId)
+        public async Task<ActionResult<IEnumerable<TransaksiReadDto>>> GetTransaksiByUser(int userId)
         {
-            // Frontend React akan pakai ini untuk menampilkan daftar buku yang sedang dipinjam mahasiswa
-            return await _context.Transaksis.Where(t => t.UserId == userId).ToListAsync();
+            return await (from t in _context.Transaksis
+                          join u in _context.Users on t.UserId equals u.Id
+                          join ib in _context.ItemBukus on t.ItemBukuId equals ib.Id
+                          join b in _context.Bukus on ib.BukuId equals b.Id
+                          where t.UserId == userId
+                          select new TransaksiReadDto
+                          {
+                              Id = t.Id,
+                              UserId = t.UserId,
+                              NamaUser = u.Nama,
+                              ItemBukuId = t.ItemBukuId,
+                              JudulBuku = b.Judul,
+                              KodeBarcode = ib.KodeBarcode,
+                              TanggalPinjam = t.TanggalPinjam,
+                              BatasKembali = t.BatasKembali,
+                              TanggalKembali = t.TanggalKembali,
+                              StatusTransaksi = t.StatusTransaksi,
+                              Denda = t.Denda,
+                              CoverUrl = b.CoverUrl
+                          }).ToListAsync();
         }
 
         // FUNGSI 3: PROSES PEMINJAMAN BUKU (Checkout)

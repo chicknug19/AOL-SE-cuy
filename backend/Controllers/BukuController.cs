@@ -95,5 +95,56 @@ namespace backend.Controllers
 
             return Ok(response);
         }
+
+        // PUT: api/Buku/5 (Untuk Fitur Edit Buku di Admin Catalog)
+        [HttpPut("{id}")]
+        public async Task<IActionResult> EditBuku(int id, BukuCreateUpdateDto dto)
+        {
+            var buku = await _context.Bukus.FindAsync(id);
+
+            if (buku == null)
+            {
+                return NotFound("Buku tidak ditemukan.");
+            }
+
+            // Perbarui data model berdasarkan DTO dari frontend
+            buku.Judul = dto.Judul;
+            buku.Pengarang = dto.Pengarang;
+            buku.TahunTerbit = dto.TahunTerbit;
+            buku.CoverUrl = dto.CoverUrl;
+            buku.Deskripsi = dto.Deskripsi;
+            buku.Isbn = dto.Isbn;
+            buku.Kategori = dto.Kategori;
+
+            await _context.SaveChangesAsync();
+
+            return NoContent(); // Status 204: Berhasil tanpa mengembalikan konten body
+        }
+
+        // DELETE: api/Buku/5 (Untuk Fitur Hapus Buku di Admin Catalog)
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> HapusBuku(int id)
+        {
+            var buku = await _context.Bukus.FindAsync(id);
+
+            if (buku == null)
+            {
+                return NotFound("Buku tidak ditemukan.");
+            }
+
+            // Cek apakah ada salinan fisik (ItemBuku) yang terikat dengan buku ini
+            var hasPhysicalItems = await _context.ItemBukus.AnyAsync(i => i.BukuId == id);
+            if (hasPhysicalItems)
+            {
+                return BadRequest("Buku tidak bisa dihapus karena masih memiliki salinan fisik di inventaris.");
+            }
+
+            _context.Bukus.Remove(buku);
+            await _context.SaveChangesAsync();
+
+            return NoContent();
+        }
+
+
     }
 }
