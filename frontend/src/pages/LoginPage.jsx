@@ -22,41 +22,43 @@ const LoginPage = () => {
     let newErrors = { nim: '', password: '', server: '' };
     let isValid = true;
 
-    // Validasi NIM: Harus angka dan minimal 8 digit (sesuai NIM Binus)
-    const nimRegex = /^\d{8,10}$/;
-    if (!nim || !nimRegex.test(nim)) {
-      newErrors.nim = "Please enter a valid NIM.";
+    // Validasi Kosong
+    if (!nim) {
+      newErrors.nim = "NIM is required.";
       isValid = false;
     }
-
-    // Validasi Password (Simulasi Frontend seperti kodemu sebelumnya)
-    if (isValid && password !== nim) {
-      newErrors.password = "Incorrect password.";
+    if (!password) {
+      newErrors.password = "Password is required.";
       isValid = false;
     }
 
     setErrors(newErrors);
 
-    // Jika validasi lokal lolos, tembak API
+    // Jika input tidak kosong, kirim ke Backend Azure
     if (isValid) {
       setIsLoading(true);
       try {
-        // payload login sesuai dengan endpoint SSO yang dibuat di backend
+        // 1. Payload disesuaikan dengan LoginMahasiswaDto di Backend
         const payload = {
-          nama: `Mahasiswa ${nim}`, // Nama otomatis jika user baru
-          email: `${nim}@binus.ac.id` // Email format Binus
+          nim: nim,
+          password: password
         };
 
-        const response = await api.post('/auth/login-sso', payload);
+        // 2. URL ditembakkan ke endpoint yang baru
+        const response = await api.post('/auth/login-mahasiswa', payload);
 
-        // Simpan JWT Token ke memori browser
+        // 3. Simpan JWT Token ke memori browser
         localStorage.setItem('token', response.data.token);
         
-        // Arahkan ke halaman utama/dashboard mahasiswa
+        // 4. Arahkan ke halaman utama
         navigate('/');
         
       } catch (error) {
-        setErrors({ ...newErrors, server: error.response?.data || 'Terjadi kesalahan pada server.' });
+        // Jika backend menolak (error 401 Unauthorized), tampilkan pesan error dari backend
+        setErrors({ 
+          ...newErrors, 
+          server: error.response?.data || 'Incorrect NIM or Password.' 
+        });
       } finally {
         setIsLoading(false);
       }
