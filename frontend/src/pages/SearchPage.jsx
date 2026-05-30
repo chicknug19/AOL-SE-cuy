@@ -150,9 +150,10 @@ const SearchPage = () => {
                       className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 flex gap-4 cursor-pointer hover:shadow-md transition-shadow"
                     >
                       <img 
-                        src={book.coverUrl || heroBook} 
+                        src={book.coverUrl || "https://placehold.co/400x600?text=No+Cover"} 
                         alt={book.judul} 
                         className="w-20 h-28 object-cover rounded shadow-sm flex-shrink-0" 
+                        onError={(e) => { e.target.src = "https://placehold.co/400x600?text=No+Cover"; }}
                       />
                       <div className="flex flex-col justify-center py-1">
                         <h4 className="font-bold text-base text-gray-900 leading-tight mb-1">{book.judul}</h4>
