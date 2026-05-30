@@ -8,51 +8,52 @@ namespace backend
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
-            builder.Services.AddDbContext<PerpusDbContext>(options =>
-                options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-            // --- TAMBAHAN CORS START ---
-            // Kita izinkan frontend React untuk mengakses API ini
-            builder.Services.AddCors(options =>
-            {
-                options.AddPolicy("AllowReactApp",
-                    policy =>
-                    {
-                        policy.WithOrigins("http://localhost:3000", "http://localhost:5173") // Port standar React/Vite
-                              .AllowAnyHeader()
-                              .AllowAnyMethod();
-                    });
-            });
-            // --- TAMBAHAN CORS END ---
-
+            // --- 1. SERVICE BAWAAN ASP.NET YANG SEMPAT TERHAPUS ---
             builder.Services.AddControllers();
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
+            builder.Services.AddAuthorization(); // <-- Ini yang akan memperbaiki error-mu!
+            // ------------------------------------------------------
+
+            // Konfigurasi Database
+            builder.Services.AddDbContext<PerpusDbContext>(options =>
+                options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+            // --- 2. KONFIGURASI CORS (Disederhanakan) ---
+            builder.Services.AddCors(options =>
+            {
+                options.AddPolicy("AllowAll", policy =>
+                {
+                    policy.AllowAnyOrigin()   // Mengizinkan domain apapun (termasuk Vercel)
+                          .AllowAnyMethod()   // Mengizinkan GET, POST, PUT, DELETE
+                          .AllowAnyHeader();  // Mengizinkan semua jenis header
+                });
+            });
+            // --------------------------------------------
 
             var app = builder.Build();
 
-            // if (app.Environment.IsDevelopment())
-            // {
-                app.UseSwagger();
-                app.UseSwaggerUI();
-            // }
+            // Selalu tampilkan Swagger untuk memudahkan testing
+            app.UseSwagger();
+            app.UseSwaggerUI();
 
             app.UseHttpsRedirection();
 
-            // --- TAMBAHAN CORS PADA PIPELINE ---
-            app.UseCors("AllowReactApp");
+            // Panggil CORS policy yang sudah dibuat
+            app.UseCors("AllowAll");
 
             app.UseAuthorization();
             app.MapControllers();
 
-            // --- AUTO MIGRATION UNTUK AZURE ---
+            // --- 3. AUTO MIGRATION UNTUK AZURE ---
             using (var scope = app.Services.CreateScope())
             {
                 var services = scope.ServiceProvider;
                 try
                 {
                     var context = services.GetRequiredService<PerpusDbContext>();
-                    context.Database.Migrate(); // Ini akan otomatis mengaplikasikan Add-Migration terbaru ke Azure!
+                    context.Database.Migrate(); // Otomatis mengaplikasikan migrasi ke Azure
                 }
                 catch (Exception ex)
                 {
@@ -60,7 +61,7 @@ namespace backend
                     logger.LogError(ex, "Terjadi kesalahan saat melakukan migrasi database.");
                 }
             }
-
+            // -------------------------------------
 
             app.Run();
         }
