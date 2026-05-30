@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom'; // 1. IMPORT USE-NAVIGATE
+import { useNavigate } from 'react-router-dom'; 
 import api from '../services/api';
 
-// 2. Hapus prop 'onNavigate'
 const AdminHomePage = ({ onLogout }) => {
-  const navigate = useNavigate(); // 3. INISIALISASI NAVIGATE
+  const navigate = useNavigate(); 
 
   // State untuk menampung data dari database
   const [dashboardData, setDashboardData] = useState({
@@ -15,21 +14,41 @@ const AdminHomePage = ({ onLogout }) => {
   });
   const [isLoading, setIsLoading] = useState(true);
 
-  // 4. MENGAMBIL DATA DARI BACKEND
   useEffect(() => {
     const fetchDashboard = async () => {
       try {
+        // --- TAMBAHKAN SATPAM VIRTUAL UNTUK ADMIN DI SINI ---
+        const token = localStorage.getItem('token');
+        if (!token) {
+          navigate('/admin');
+          return;
+        }
+
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        const userId = payload["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"] || payload.nameid;
+
+        // Cek Role user tersebut ke backend
+        const userRes = await api.get(`/user/${userId}`);
+        if (userRes.data.role !== "Admin") {
+          // Jika bukan admin, tendang ke halaman home member!
+          navigate('/');
+          return;
+        }
+
+        // Jika dia benar-benar Admin, baru ambil data dashboard
         const response = await api.get('/dashboard');
         setDashboardData(response.data);
       } catch (error) {
         console.error("Gagal memuat data dashboard:", error);
+        localStorage.removeItem('token');
+        navigate('/admin');
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchDashboard();
-  }, []);
+  }, [navigate]);
 
   // Format tanggal agar lebih rapi
   const formatDate = (dateString) => {

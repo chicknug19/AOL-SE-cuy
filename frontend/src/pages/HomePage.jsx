@@ -35,6 +35,12 @@ const HomePage = ({ onLogout }) => {
           api.get(`/transaksi/user/${userId}`)
         ]);
 
+        if (userRes.data.role === "Admin") {
+          navigate('/admin/dashboard');
+          return; // Hentikan proses render halaman member
+        }
+
+
         setUserData(userRes.data);
         const allTransactions = trxRes.data;
 
@@ -176,7 +182,12 @@ const HomePage = ({ onLogout }) => {
 
         {/* Hero Carousel */}
         <div className="relative w-full h-[300px] md:h-[400px] bg-[#9DBE99] rounded-xl overflow-hidden mb-10 flex justify-center items-center">
-          <img src={heroBook} alt="Featured Book" className="h-[90%] md:h-[95%] object-contain shadow-2xl z-10" />
+          <img 
+            src={activeBooks.length > 0 && activeBooks[0].coverUrl ? activeBooks[0].coverUrl : "https://placehold.co/400x600/C1272D/ffffff?text=Bookugers"} 
+            alt="Featured Book" 
+            className="h-[90%] md:h-[95%] object-contain shadow-2xl z-10 rounded-xl" 
+            onError={(e) => { e.target.src = "https://placehold.co/400x600/C1272D/ffffff?text=Bookugers"; }}
+          />
           <button className="absolute left-4 md:left-8 top-1/2 -translate-y-1/2 w-12 h-12 bg-black/30 hover:bg-black/50 rounded-full flex items-center justify-center text-white transition-colors z-20">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7"/></svg>
           </button>
@@ -207,7 +218,12 @@ const HomePage = ({ onLogout }) => {
                       onClick={() => navigate(`/book/${trx.bukuId || trx.itemBukuId}`)} 
                       className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 flex gap-4 h-full cursor-pointer hover:shadow-md transition-shadow"
                     >
-                      <img src={book1} alt="Book" className="w-20 h-28 object-cover rounded shadow-sm flex-shrink-0" />
+                      <img 
+                        src={trx.coverUrl || "https://placehold.co/400x600?text=No+Cover"} 
+                        alt="Book" 
+                        className="w-20 h-28 object-cover rounded shadow-sm flex-shrink-0" 
+                        onError={(e) => { e.target.src = "https://placehold.co/400x600?text=No+Cover"; }}
+                      />
                       <div className="flex flex-col justify-between py-1 w-full">
                         <div>
                           <h4 className="font-bold text-sm text-gray-900 leading-tight">{trx.judulBuku}</h4>

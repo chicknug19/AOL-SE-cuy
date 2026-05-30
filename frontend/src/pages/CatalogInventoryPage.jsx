@@ -4,6 +4,44 @@ import api from '../services/api';
 
 const CatalogInventoryPage = ({ onLogout }) => {
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchDashboard = async () => {
+      try {
+        // --- TAMBAHKAN SATPAM VIRTUAL UNTUK ADMIN DI SINI ---
+        const token = localStorage.getItem('token');
+        if (!token) {
+          navigate('/admin');
+          return;
+        }
+
+        // Decode token untuk mendapatkan ID
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        const userId = payload["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"] || payload.nameid;
+
+        // Cek Role user tersebut ke backend
+        const userRes = await api.get(`/user/${userId}`);
+        if (userRes.data.role !== "Admin") {
+          // Jika bukan admin, tendang ke halaman home member!
+          navigate('/');
+          return;
+        }
+        // ---------------------------------------------------
+
+        // Jika dia benar-benar Admin, baru ambil data dashboard
+        const response = await api.get('/dashboard');
+        setDashboardData(response.data);
+      } catch (error) {
+        console.error("Gagal memuat data dashboard:", error);
+        localStorage.removeItem('token');
+        navigate('/admin');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchDashboard();
+  }, [navigate]);
   
   // State Utama
   const [books, setBooks] = useState([]);
@@ -78,7 +116,6 @@ const CatalogInventoryPage = ({ onLogout }) => {
     setModalState({ isOpen: false, mode: 'add' });
   };
 
-  // 2. CREATE & UPDATE: Fungsi Simpan Buku
   const handleSaveBook = async () => {
     setIsSubmitting(true);
     try {
@@ -87,8 +124,8 @@ const CatalogInventoryPage = ({ onLogout }) => {
         pengarang: formData.pengarang,
         isbn: formData.isbn,
         kategori: formData.kategori,
-        penerbit: formData.penerbit,
-        tahunTerbit: formData.tahunTerbit ? parseInt(formData.tahunTerbit) : 0,
+        // Penerbit tetap dikirim tidak masalah, atau bisa dikosongkan jika tidak dipakai di backend
+        tahunTerbit: formData.tahunTerbit ? formData.tahunTerbit.toString() : "", // Diubah menjadi string
         deskripsi: formData.deskripsi,
         coverUrl: formData.coverUrl
       };
@@ -102,14 +139,14 @@ const CatalogInventoryPage = ({ onLogout }) => {
       }
 
       closeModal();
-      fetchBooks(); // Refresh tabel
+      fetchBooks(); 
     } catch (error) {
       alert(error.response?.data || "Gagal menyimpan buku");
     } finally {
       setIsSubmitting(false);
     }
   };
-
+  
   // 3. DELETE: Fungsi Hapus Buku
   const handleDeleteBook = async (id, judul) => {
     if (window.confirm(`Apakah Anda yakin ingin menghapus buku "${judul}"?`)) {
