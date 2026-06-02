@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import loginBg from '../assets/login_bg.png';
 import Footer from '../components/Footer';
+import LoginHeader from '../components/LoginHeader'; // <-- Import Header Baru
 
 const LoginPage = () => {
   const navigate = useNavigate();
@@ -20,14 +21,11 @@ const LoginPage = () => {
 
   // Fungsi khusus untuk menangani input NIM (Hanya angka, max 10 digit)
   const handleNimChange = (e) => {
-    // Replace semua karakter yang bukan angka (\D) dengan string kosong
     const value = e.target.value.replace(/\D/g, '');
 
-    // Batasi panjang maksimal 10 digit
     if (value.length <= 10) {
       setNim(value);
 
-      // Validasi real-time: Munculkan error jika kurang dari 10 digit
       if (value.length > 0 && value.length < 10) {
         setErrors((prev) => ({ ...prev, nim: 'Please enter exactly a 10-digit NIM.' }));
       } else {
@@ -39,11 +37,9 @@ const LoginPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // Reset error state
     let newErrors = { nim: '', password: '', server: '' };
     let isValid = true;
 
-    // Validasi Kosong & Panjang NIM
     if (!nim) {
       newErrors.nim = "NIM is required.";
       isValid = false;
@@ -59,7 +55,6 @@ const LoginPage = () => {
 
     setErrors(newErrors);
 
-    // Jika input valid, kirim ke Backend Azure
     if (isValid) {
       setIsLoading(true);
       try {
@@ -87,35 +82,8 @@ const LoginPage = () => {
   return (
     <div className="w-full min-h-screen bg-slate-50 font-sans text-gray-800 flex flex-col">
       
-      {/* Top Header - Diubah ke gradient Modern Deep Blue to Indigo */}
-      <header className="w-full bg-gradient-to-r from-blue-900 to-indigo-800 text-white py-4 px-6 md:px-12 flex flex-col md:flex-row items-center justify-between z-20 shadow-lg">
-        {/* Left: Logo & Title */}
-        <div className="flex items-center gap-3 mb-4 md:mb-0 cursor-pointer group" onClick={() => navigate('/')}>
-          <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center p-1 shadow-inner transform group-hover:scale-105 transition-transform duration-200">
-            <svg className="w-full h-full text-indigo-600" viewBox="0 0 100 100" fill="currentColor">
-              <circle cx="50" cy="50" r="45" fill="white" stroke="#4F46E5" strokeWidth="3"/>
-              <path d="M50 20 L25 40 L25 80 L75 80 L75 40 Z" fill="none" stroke="#4299E1" strokeWidth="3"/>
-              <path d="M50 20 L50 80" stroke="#4299E1" strokeWidth="3"/>
-              <path d="M35 50 L65 50" stroke="#4F46E5" strokeWidth="3"/>
-              <path d="M35 65 L65 65" stroke="#4F46E5" strokeWidth="3"/>
-              <path d="M50 35 L40 45 L50 55 L60 45 Z" fill="#4F46E5"/>
-            </svg>
-          </div>
-          <h1 className="font-extrabold text-base md:text-xl tracking-wide">Bookugers Library</h1>
-        </div>
-
-        {/* Right: Navigation Links */}
-        <nav className="flex items-center gap-8 text-sm font-semibold">
-          <button onClick={() => navigate('/')} className="flex items-center gap-2 hover:text-blue-200 transition-colors">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
-            Home
-          </button>
-          <button onClick={() => navigate('/about')} className="flex items-center gap-2 hover:text-blue-200 transition-colors">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-            About Us
-          </button>
-        </nav>
-      </header>
+      {/* Panggil Login Header di sini */}
+      <LoginHeader />
 
       {/* Main Content Area */}
       <main className="relative w-full flex-grow flex flex-col items-center justify-center min-h-[650px] py-12">
@@ -193,12 +161,10 @@ const LoginPage = () => {
                   className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-indigo-600 focus:outline-none transition-colors"
                 >
                   {showPassword ? (
-                    // Eye Slash Icon (Hide)
                     <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
                     </svg>
                   ) : (
-                    // Eye Icon (Show)
                     <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
@@ -209,14 +175,11 @@ const LoginPage = () => {
               {errors.password && <span className="text-xs text-red-500 font-medium ml-1">{errors.password}</span>}
             </div>
 
-            {/* Remember Me & Forgot Password */}
             <div className="flex items-center justify-between mt-2 px-1">
               <div className="flex items-center gap-2">
                 <input type="checkbox" id="remember" className="w-4 h-4 text-indigo-600 border-slate-300 rounded focus:ring-indigo-500 cursor-pointer transition-colors" />
                 <label htmlFor="remember" className="text-sm font-semibold text-slate-600 cursor-pointer select-none">Remember me</label>
               </div>
-              
-              {/* TOMBOL FORGOT PASSWORD BARU */}
               <button 
                 type="button" 
                 onClick={() => navigate('/forgot-password')} 
@@ -226,7 +189,6 @@ const LoginPage = () => {
               </button>
             </div>
 
-            {/* Submit Buttons */}
             <div className="flex flex-col items-center gap-4 mt-4">
               <button 
                 type="submit" 

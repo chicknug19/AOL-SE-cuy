@@ -56,7 +56,7 @@ const AdminBorrowPage = ({ onLogout }) => {
       setMemberData(response.data);
     } catch (error) {
       setMemberData(null);
-      setMemberError(error.response?.data || 'Member tidak ditemukan');
+      setMemberError(error.response?.data || 'Member not found');
     }
   };
 
@@ -67,7 +67,7 @@ const AdminBorrowPage = ({ onLogout }) => {
 
     const isAlreadyInCart = cart.find(b => b.kodeBarcode === barcodeInput);
     if (isAlreadyInCart) {
-      setCartError('Buku ini sudah ada di dalam keranjang.');
+      setCartError('This book is already in the cart.');
       return;
     }
 
@@ -76,14 +76,14 @@ const AdminBorrowPage = ({ onLogout }) => {
       const book = response.data;
 
       if (book.status !== 'Tersedia') {
-        setCartError(`Buku tidak bisa dipinjam. Status: ${book.status}`);
+        setCartError(`This book cannot be borrowed. Status: ${book.status}`);
         return;
       }
 
       setCart([...cart, book]);
       setBarcodeInput(''); 
     } catch (error) {
-      setCartError('Barcode tidak valid atau buku tidak ditemukan');
+      setCartError('Invalid barcode or book not found');
     }
   };
 
@@ -103,12 +103,12 @@ const AdminBorrowPage = ({ onLogout }) => {
         });
       }
 
-      setCheckoutSuccess('Transaksi berhasil! Buku siap dibawa pulang.');
+      setCheckoutSuccess('The Transaction is Successful! Books have been borrowed.');
       setCart([]); 
       setMemberData(null); 
       setMemberIdInput('');
     } catch (error) {
-      setCartError(error.response?.data || 'Gagal memproses transaksi');
+      setCartError(error.response?.data || 'Failed to process transaction');
     } finally {
       setIsCheckoutLoading(false);
     }

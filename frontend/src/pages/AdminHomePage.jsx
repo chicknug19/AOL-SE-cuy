@@ -18,9 +18,9 @@ const AdminHomePage = ({ onLogout }) => {
   // --- STATE UNTUK TABLE CONTROLS ---
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
-  const [sortConfig, setSortConfig] = useState({ key: 'tanggalPinjam', direction: 'desc' }); // Default urutkan dari yang terbaru
+  const [sortConfig, setSortConfig] = useState({ key: 'tanggalPinjam', direction: 'desc' });
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(5); // Default 5 untuk dashboard
+  const [itemsPerPage, setItemsPerPage] = useState(5);
 
   useEffect(() => {
     const fetchDashboard = async () => {
@@ -57,12 +57,20 @@ const AdminHomePage = ({ onLogout }) => {
   // Format tanggal agar lebih rapi
   const formatDate = (dateString) => {
     if (!dateString) return "-";
-    return new Date(dateString).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+    return new Date(dateString).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+  };
+
+  // --- HELPER TRANSLATOR STATUS KE INGGRIS ---
+  const translateStatus = (status) => {
+    switch(status) {
+      case 'Berjalan': return 'ACTIVE';
+      case 'Selesai': return 'RETURNED';
+      case 'Terlambat': return 'OVERDUE';
+      default: return status ? status.toUpperCase() : 'UNKNOWN';
+    }
   };
 
   // --- LOGIKA FILTER, SORTING & PAGINATION ---
-  
-  // 1. Filter Search & Status
   let processedTransactions = dashboardData.recentTransactions.filter(trx => {
     const searchLower = searchTerm.toLowerCase();
     const matchesSearch = 
@@ -70,17 +78,17 @@ const AdminHomePage = ({ onLogout }) => {
       (trx.judulBuku && trx.judulBuku.toLowerCase().includes(searchLower)) ||
       (trx.userId && trx.userId.toString().includes(searchLower));
     
+    // Filter tetap menggunakan kata asli dari backend ("Berjalan", dll)
     const matchesStatus = statusFilter === 'All' || trx.statusTransaksi === statusFilter;
 
     return matchesSearch && matchesStatus;
   });
 
-  // 2. Sorting
+  // Sorting
   processedTransactions.sort((a, b) => {
     let aValue = a[sortConfig.key];
     let bValue = b[sortConfig.key];
 
-    // Penanganan khusus jika yang di-sort adalah tanggal
     if (sortConfig.key === 'tanggalPinjam' || sortConfig.key === 'batasKembali') {
       aValue = new Date(aValue || 0).getTime();
       bValue = new Date(bValue || 0).getTime();
@@ -94,7 +102,7 @@ const AdminHomePage = ({ onLogout }) => {
     return 0;
   });
 
-  // 3. Pagination
+  // Pagination
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentItems = processedTransactions.slice(indexOfFirstItem, indexOfLastItem);
@@ -120,7 +128,7 @@ const AdminHomePage = ({ onLogout }) => {
 
         {isLoading ? (
           <div className="flex justify-center items-center h-48">
-            <p className="text-gray-500 font-bold">Memuat data statistik...</p>
+            <p className="text-gray-500 font-bold">Loading statistics data...</p>
           </div>
         ) : (
           <>
@@ -179,9 +187,10 @@ const AdminHomePage = ({ onLogout }) => {
                   className="w-full bg-transparent text-sm font-medium text-gray-700 outline-none appearance-none cursor-pointer pr-6"
                 >
                   <option value="All">All Statuses</option>
-                  <option value="Berjalan">Berjalan (Active)</option>
-                  <option value="Terlambat">Terlambat (Overdue)</option>
-                  <option value="Selesai">Selesai (Returned)</option>
+                  {/* Valuenya tetap bahasa Indonesia untuk API, tapi textnya bahasa Inggris */}
+                  <option value="Berjalan">Active</option>
+                  <option value="Terlambat">Overdue</option>
+                  <option value="Selesai">Returned</option>
                 </select>
                 <svg className="w-4 h-4 text-gray-500 absolute right-4 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
@@ -194,7 +203,6 @@ const AdminHomePage = ({ onLogout }) => {
               <div className="px-8 py-6 border-b border-gray-200 flex justify-between items-center bg-white">
                 <h2 className="text-lg font-bold text-black tracking-wide">Transactions ({processedTransactions.length})</h2>
                 
-                {/* Opsi Items Per Page */}
                 <div className="flex items-center gap-2 text-sm font-medium text-gray-500">
                   Show
                   <select 
@@ -246,12 +254,13 @@ const AdminHomePage = ({ onLogout }) => {
                           <td className="px-6 py-4 text-gray-500">{formatDate(trx.tanggalPinjam)}</td>
                           <td className="px-6 py-4 text-gray-500">{formatDate(trx.batasKembali)}</td>
                           <td className="px-8 py-4 flex justify-center">
-                            <span className={`inline-flex items-center justify-center px-4 py-1 rounded-full text-[11px] font-bold ${
+                            {/* Pemanggilan fungsi translateStatus() di sini */}
+                            <span className={`inline-flex items-center justify-center px-4 py-1 rounded-full text-[10px] font-bold tracking-wider ${
                               trx.statusTransaksi === 'Berjalan' ? 'bg-blue-100 text-blue-700 border border-blue-200' :
                               trx.statusTransaksi === 'Terlambat' ? 'bg-red-100 text-red-700 border border-red-200' :
                               'bg-green-100 text-green-700 border border-green-200'
                             }`}>
-                              {trx.statusTransaksi}
+                              {translateStatus(trx.statusTransaksi)}
                             </span>
                           </td>
                         </tr>
