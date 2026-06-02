@@ -1,15 +1,47 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import api from '../services/api';
+import MemberHeader from '../components/MemberHeader'; // <-- Import Header
 import headerBg from '../assets/header_bg.png';
 import divider1 from '../assets/divider_1.png';
 import booksSide from '../assets/books_side.png';
 import footerDivider from '../assets/footer_divider.png';
-import Footer from '../components/Footer'; // Import komponen Footer
+import Footer from '../components/Footer';
 
 const AboutUsPage = () => {
+  // State untuk dikirim ke MemberHeader
+  const [userData, setUserData] = useState(null);
+  const [allBooks, setAllBooks] = useState([]);
+
+  useEffect(() => {
+    const fetchHeaderData = async () => {
+      try {
+        // 1. Ambil data user jika sedang login (agar nama di pojok kanan atas muncul)
+        const token = localStorage.getItem('token');
+        if (token) {
+          const payload = JSON.parse(atob(token.split('.')[1]));
+          const userId = payload["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"] || payload.nameid;
+          const userRes = await api.get(`/user/${userId}`);
+          setUserData(userRes.data);
+        }
+
+        // 2. Ambil data buku untuk fitur Live Search di Header
+        const booksRes = await api.get('/buku');
+        setAllBooks(booksRes.data);
+      } catch (error) {
+        console.error("Gagal memuat data header:", error);
+      }
+    };
+
+    fetchHeaderData();
+  }, []);
+
   return (
     <div className="w-full min-h-screen bg-white font-sans text-gray-800">
       
-      {/* Header Section */}
+      {/* Panggil Header Di Sini */}
+      <MemberHeader userData={userData} allBooks={allBooks} />
+
+      {/* Header Section (Hero Image) */}
       <section className="relative w-full h-[300px] md:h-[500px]">
         <img src={headerBg} alt="Header" className="w-full h-full object-cover" />
         <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center text-white">
@@ -92,7 +124,7 @@ const AboutUsPage = () => {
         <img src={footerDivider} alt="Footer Divider" className="w-full h-full object-cover" />
       </div>
 
-      {/* Footer Component Dipanggil Di Sini */}
+      {/* Footer */}
       <Footer />
 
     </div>

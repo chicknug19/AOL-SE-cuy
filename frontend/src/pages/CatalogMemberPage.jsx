@@ -1,19 +1,31 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
+import MemberHeader from '../components/MemberHeader'; // <-- Import Header
 
 const CatalogMemberPage = () => {
   const navigate = useNavigate();
   const [books, setBooks] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [userData, setUserData] = useState(null); // Tambah state userData untuk dikirim ke Header
   
-  // State untuk Filter & Search
+  // State untuk Filter & Search (Khusus untuk Grid Katalog)
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
-    const fetchBooks = async () => {
+    const fetchInitialData = async () => {
       try {
+        // Ambil token untuk mendapatkan data user (agar nama user muncul di header)
+        const token = localStorage.getItem('token');
+        if (token) {
+          const payload = JSON.parse(atob(token.split('.')[1]));
+          const userId = payload["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"] || payload.nameid;
+          const userRes = await api.get(`/user/${userId}`);
+          setUserData(userRes.data);
+        }
+
+        // Ambil data buku
         const response = await api.get('/buku');
         setBooks(response.data);
       } catch (error) {
@@ -23,7 +35,7 @@ const CatalogMemberPage = () => {
       }
     };
 
-    fetchBooks();
+    fetchInitialData();
   }, []);
 
   // Menghasilkan daftar kategori unik dari data buku yang ada di database
@@ -42,53 +54,29 @@ const CatalogMemberPage = () => {
   return (
     <div className="min-h-screen bg-[#F2FBFA] font-sans text-gray-900 pb-12">
       
-      {/* Header / Navigasi Atas */}
-      <header className="bg-white py-4 px-6 md:px-12 flex items-center justify-between shadow-sm sticky top-0 z-50">
-        <div className="flex items-center gap-4">
-          <button 
-            onClick={() => navigate('/')} 
-            className="p-2 text-gray-500 hover:text-black hover:bg-gray-100 rounded-full transition-colors"
-            title="Back to Home"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-            </svg>
-          </button>
-          <div>
-            <h1 className="font-bold text-lg leading-tight text-gray-900">Explore Catalog</h1>
-            <p className="text-[10px] text-gray-500 font-medium">Discover your next favorite book</p>
-          </div>
-        </div>
-
-        {/* Search Bar di Header */}
-        <div className="hidden md:flex items-center bg-gray-50 rounded-full px-4 py-2 border border-gray-200 focus-within:border-blue-400 focus-within:bg-white transition-all w-[300px]">
-          <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
-          <input 
-            type="text" 
-            placeholder="Search titles or authors..." 
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-transparent outline-none ml-2 text-sm text-gray-700"
-          />
-        </div>
-      </header>
+      {/* Panggil Header Baru di Sini */}
+      <MemberHeader userData={userData} allBooks={books} />
 
       {/* Main Content Layout */}
       <main className="max-w-7xl mx-auto px-6 md:px-12 mt-8">
         
-        {/* Search Bar untuk Mobile (Merespon jika layar kecil) */}
-        <div className="md:hidden flex items-center bg-white rounded-full px-4 py-3 mb-6 shadow-sm border border-gray-100">
-          <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        {/* Judul Halaman Explore */}
+        <div className="mb-8">
+          <h1 className="font-bold text-2xl text-gray-900">Explore Catalog</h1>
+          <p className="text-sm text-gray-500 font-medium">Discover your next favorite book</p>
+        </div>
+
+        {/* Search Bar untuk Filter Grid Halaman Ini (Terpisah dari Header) */}
+        <div className="flex items-center bg-white rounded-full px-4 py-3 mb-8 shadow-sm border border-gray-100 max-w-2xl">
+          <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
           <input 
             type="text" 
-            placeholder="Search titles..." 
+            placeholder="Filter catalog by title or author..." 
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-transparent outline-none ml-2 text-sm"
+            className="w-full bg-transparent outline-none ml-3 text-sm text-gray-700"
           />
         </div>
 
