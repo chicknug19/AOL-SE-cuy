@@ -1,19 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
+import MemberHeader from '../components/MemberHeader'; // <-- Import Header Baru
 
-const HomePage = ({ onLogout }) => {
+const HomePage = () => {
   const navigate = useNavigate();
-  const [query, setQuery] = useState('');
   
-  // State untuk data dinamis
   const [userData, setUserData] = useState(null);
   const [activeBooks, setActiveBooks] = useState([]);
   const [stats, setStats] = useState({ totalFines: 0, dueSoon: 0, totalRead: 0 });
   const [isLoading, setIsLoading] = useState(true);
   const [allBooks, setAllBooks] = useState([]);
 
-  // --- STATE UNTUK CAROUSEL SLIDER ---
   const [currentSlide, setCurrentSlide] = useState(0);
 
   useEffect(() => {
@@ -83,44 +81,26 @@ const HomePage = ({ onLogout }) => {
     fetchUserDashboard();
   }, [navigate]);
 
-  // Logika Rekomendasi Pencarian
-  const recommendations = query.trim() === '' ? [] : allBooks
-    .filter(b => b.judul.toLowerCase().includes(query.toLowerCase()))
-    .sort((a, b) => a.judul.localeCompare(b.judul))
-    .slice(0, 5); 
-
-  // --- LOGIKA PROGRESS BAR CERDAS ---
-  // Sekarang membutuhkan Tanggal Pinjam & Batas Kembali untuk kalkulasi presisi
   const calculateDaysRemaining = (dueDateString, borrowDateString) => {
     const today = new Date();
     const dueDate = new Date(dueDateString);
     const borrowDate = new Date(borrowDateString);
     
-    // Hitung total durasi peminjaman (biasanya 7 hari dari backend)
     const totalDuration = Math.max(1, Math.ceil((dueDate - borrowDate) / (1000 * 60 * 60 * 24)));
-    
-    // Hitung sisa hari
     const diffDays = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24));
-    
-    // Hitung persentase waktu yang SUDAH BERLALU (Mulai dari 0% ke 100%)
     const passedDays = totalDuration - diffDays;
-    let percentage = (passedDays / totalDuration) * 100;
     
+    let percentage = (passedDays / totalDuration) * 100;
     if (percentage < 0) percentage = 0;
     if (percentage > 100) percentage = 100;
 
-    // Logika Warna Responsif:
-    let colorClass = 'bg-green-500'; // Default hijau (masih awal-awal)
+    let colorClass = 'bg-green-500'; 
+    if (diffDays <= 2 && diffDays >= 0) colorClass = 'bg-red-500'; 
+    else if (diffDays <= (totalDuration / 2)) colorClass = 'bg-yellow-400'; 
     
-    if (diffDays <= 2 && diffDays >= 0) {
-      colorClass = 'bg-red-500'; // Sisa 2 hari = Merah
-    } else if (diffDays <= (totalDuration / 2)) {
-      colorClass = 'bg-yellow-400'; // Sisa setengah waktu (misal sisa 3 atau 4 hari) = Kuning
-    }
-
     if (diffDays < 0) {
-      colorClass = 'bg-red-700'; // Sudah terlambat (Overdue)
-      percentage = 100; // Bar penuh merah gelap
+      colorClass = 'bg-red-700'; 
+      percentage = 100; 
     }
 
     return { days: diffDays, percentage, colorClass };
@@ -130,8 +110,6 @@ const HomePage = ({ onLogout }) => {
     return new Date(dateString).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
   };
 
-  // --- FUNGSI NAVIGASI CAROUSEL ---
-  // Slider SEKARANG SELALU menampilkan 5 buku pertama dari katalog sebagai "Featured"
   const carouselItems = allBooks.slice(0, 5);
 
   const nextSlide = () => {
@@ -142,86 +120,17 @@ const HomePage = ({ onLogout }) => {
     setCurrentSlide((prev) => (prev === 0 ? carouselItems.length - 1 : prev - 1));
   };
 
-
   if (isLoading) {
     return <div className="min-h-screen flex justify-center items-center bg-[#F2FBFA] font-bold text-gray-500">Memuat Dashboard...</div>;
   }
 
-  // Tentukan item yang sedang aktif di layar
   const currentCarouselBook = carouselItems[currentSlide];
 
   return (
     <div className="w-full min-h-screen bg-[#F2FBFA] font-sans text-gray-800 pb-12">
       
-      {/* Top Navigation Bar */}
-      <header className="bg-white py-3 px-6 md:px-12 flex flex-col md:flex-row items-center justify-between shadow-sm sticky top-0 z-50">
-        <div className="flex items-center gap-3 mb-4 md:mb-0">
-          <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center p-1 shadow-sm border border-gray-100">
-            <svg className="w-full h-full text-[#38A169]" viewBox="0 0 100 100" fill="currentColor">
-              <circle cx="50" cy="50" r="45" fill="white" stroke="#38A169" strokeWidth="3"/>
-              <path d="M50 20 L25 40 L25 80 L75 80 L75 40 Z" fill="none" stroke="#4299E1" strokeWidth="3"/>
-              <path d="M50 20 L50 80" stroke="#4299E1" strokeWidth="3"/>
-              <path d="M50 35 L40 45 L50 55 L60 45 Z" fill="#38A169"/>
-            </svg>
-          </div>
-          <div>
-            <h1 className="font-bold text-lg leading-tight text-gray-900">Bookugers</h1>
-            <p className="text-[10px] text-gray-500">University Library System</p>
-          </div>
-        </div>
-
-        <div className="relative w-full max-w-md mb-4 md:mb-0">
-          <div className="w-full bg-white rounded-full flex items-center px-4 py-2 shadow-sm border border-gray-200 focus-within:border-blue-400 transition-colors">
-            <svg 
-              onClick={() => navigate(`/search?q=${query}`)}
-              className="w-4 h-4 text-gray-500 flex-shrink-0 cursor-pointer hover:text-blue-500 transition-colors" 
-              fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-            <input 
-              type="text" 
-              placeholder="Search for books, authors, or topics" 
-              className="w-full bg-transparent outline-none border-none ml-3 text-gray-700 placeholder-gray-400 text-sm"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') navigate(`/search?q=${query}`);
-              }}
-            />
-          </div>
-
-          {recommendations.length > 0 && (
-            <div className="absolute top-full mt-2 left-0 w-full bg-white border border-gray-200 shadow-xl rounded-xl overflow-hidden z-50">
-              {recommendations.map(book => (
-                <div 
-                  key={book.id}
-                  onClick={() => navigate(`/search?q=${book.judul}`)}
-                  className="px-4 py-3 hover:bg-gray-50 cursor-pointer text-sm text-gray-800 border-b border-gray-100 last:border-0 flex items-center gap-3 font-semibold transition-colors"
-                >
-                  <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                  </svg>
-                  <span className="truncate">{book.judul}</span>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        <div className="text-right flex items-center gap-4">
-          <div className="flex flex-col items-end">
-            <span className="text-[11px] text-gray-500">Welcome Back,</span>
-            <span className="font-bold text-gray-900 text-sm">{userData?.nama || "Member"}</span>
-          </div>
-          <button onClick={() => {
-            localStorage.removeItem('token');
-            navigate('/login');
-          }} className="p-2 text-gray-400 hover:text-red-500 transition-colors">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
-          </button>
-        </div>
-      </header>
+      {/* Panggil Header Baru di Sini */}
+      <MemberHeader userData={userData} allBooks={allBooks} />
 
       <main className="max-w-7xl mx-auto px-6 md:px-12 mt-8">
         
@@ -239,7 +148,6 @@ const HomePage = ({ onLogout }) => {
           </div>
         )}
 
-        {/* --- CAROUSEL SLIDER AKTIF --- */}
         <div className="relative w-full h-[300px] md:h-[400px] bg-[#9DBE99] rounded-xl overflow-hidden mb-10 flex justify-center items-center shadow-md">
           {currentCarouselBook ? (
             <>
@@ -251,7 +159,6 @@ const HomePage = ({ onLogout }) => {
                 onError={(e) => { e.target.src = "https://placehold.co/400x600/C1272D/ffffff?text=Bookugers"; }}
               />
               
-              {/* Tampilkan panah navigasi hanya jika item lebih dari 1 */}
               {carouselItems.length > 1 && (
                 <>
                   <button onClick={prevSlide} className="absolute left-4 md:left-8 top-1/2 -translate-y-1/2 w-12 h-12 bg-black/30 hover:bg-black/60 rounded-full flex items-center justify-center text-white transition-colors z-20">
@@ -261,7 +168,6 @@ const HomePage = ({ onLogout }) => {
                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7"/></svg>
                   </button>
                   
-                  {/* Titik indikator di bawah slider */}
                   <div className="absolute bottom-4 flex gap-2 z-20">
                     {carouselItems.map((_, idx) => (
                       <div key={idx} className={`w-2.5 h-2.5 rounded-full transition-colors ${idx === currentSlide ? 'bg-white' : 'bg-white/40'}`} />
@@ -288,7 +194,6 @@ const HomePage = ({ onLogout }) => {
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 items-start">
                 {activeBooks.map((trx) => {
-                  // Kirim tanggal pinjam untuk hitung persentase presisi
                   const timeInfo = calculateDaysRemaining(trx.batasKembali, trx.tanggalPinjam);
                   
                   return (
@@ -326,7 +231,6 @@ const HomePage = ({ onLogout }) => {
                             </div>
                           )}
 
-                          {/* --- PROGRESS BAR CERDAS DI SINI --- */}
                           <div className="w-full h-1.5 bg-gray-200 rounded-full overflow-hidden">
                             <div 
                               className={`h-full transition-all duration-700 ease-out ${timeInfo.colorClass}`} 
