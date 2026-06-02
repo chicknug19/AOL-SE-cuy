@@ -24,6 +24,16 @@ const MemberHeader = ({ userData, allBooks = [] }) => {
       : "text-gray-500 hover:text-[#3B82F6] font-semibold transition-colors";
   };
 
+  // --- FUNGSI NAVIGASI PENCARIAN ---
+  const handleSearchSubmit = () => {
+    if (query.trim() !== '') {
+      navigate(`/search?q=${query}`);
+    } else {
+      navigate('/search'); // Pergi ke halaman search meskipun input kosong
+    }
+    setQuery(''); // Kosongkan kotak setelah mencari/berpindah
+  };
+
   return (
     <header className="bg-white py-3 px-6 md:px-12 flex flex-col md:flex-row items-center justify-between shadow-sm sticky top-0 z-50">
       
@@ -56,12 +66,7 @@ const MemberHeader = ({ userData, allBooks = [] }) => {
       <div className="relative w-full max-w-md mb-4 md:mb-0">
         <div className="w-full bg-white rounded-full flex items-center px-4 py-2 shadow-sm border border-gray-200 focus-within:border-blue-400 transition-colors">
           <svg 
-            onClick={() => {
-              if (query.trim() !== '') {
-                navigate(`/search?q=${query}`);
-                setQuery(''); // Kosongkan kotak setelah mencari
-              }
-            }}
+            onClick={handleSearchSubmit}
             className="w-4 h-4 text-gray-500 flex-shrink-0 cursor-pointer hover:text-blue-500 transition-colors" 
             fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5"
           >
@@ -74,9 +79,8 @@ const MemberHeader = ({ userData, allBooks = [] }) => {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === 'Enter' && query.trim() !== '') {
-                navigate(`/search?q=${query}`);
-                setQuery('');
+              if (e.key === 'Enter') {
+                handleSearchSubmit();
               }
             }}
           />
