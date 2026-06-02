@@ -11,153 +11,230 @@ const AdminLoginPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [errorMsg, setErrorMsg] = useState('');
+  
+  // State untuk fitur lihat password
+  const [showPassword, setShowPassword] = useState(false);
+
+  // State untuk menyimpan pesan error spesifik
+  const [errors, setErrors] = useState({ email: '', password: '', server: '' });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setIsLoading(true);
-    setErrorMsg('');
+    
+    // Reset error state
+    let newErrors = { email: '', password: '', server: '' };
+    let isValid = true;
 
-    try {
-      // 1. Sesuaikan payload dengan isi LoginAdminDto di backend
-      const payload = {
-        email: email,
-        password: password
-      };
+    // Validasi Email
+    if (!email) {
+      newErrors.email = "Email is required.";
+      isValid = false;
+    } else if (!/\S+@\S+\.\S+/.test(email)) {
+      newErrors.email = "Please enter a valid email address.";
+      isValid = false;
+    }
 
-      // 2. Tembak ke endpoint login-admin yang benar
-      const response = await api.post('/auth/login-admin', payload);
+    // Validasi Password
+    if (!password) {
+      newErrors.password = "Password is required.";
+      isValid = false;
+    }
 
-      // Simpan JWT Token ke memori browser
-      localStorage.setItem('token', response.data.token);
-      
-      // Jika berhasil, arahkan ke dashboard admin
-      navigate('/admin/dashboard');
-      
-    } catch (error) {
-      // Tangkap pesan error dari backend
-      setErrorMsg(error.response?.data || 'Email atau Password salah.');
-    } finally {
-      setIsLoading(false);
+    setErrors(newErrors);
+
+    // Jika input valid, proses ke backend
+    if (isValid) {
+      setIsLoading(true);
+      try {
+        const payload = {
+          email: email,
+          password: password
+        };
+
+        const response = await api.post('/auth/login-admin', payload);
+
+        // Simpan JWT Token ke memori browser
+        localStorage.setItem('token', response.data.token);
+        
+        // Arahkan ke dashboard admin
+        navigate('/admin/dashboard');
+        
+      } catch (error) {
+        setErrors({ 
+          ...newErrors, 
+          server: error.response?.data || 'Incorrect Email or Password.' 
+        });
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
   return (
-    <div className="w-full min-h-screen bg-white font-sans text-gray-800 flex flex-col">
+    <div className="w-full min-h-screen bg-slate-50 font-sans text-gray-800 flex flex-col">
       
-      {/* Top Navigation Bar */}
-      <header className="bg-[#C1272D] py-3 px-6 md:px-12 flex flex-col md:flex-row items-center justify-between shadow-md z-10 relative">
-        <div className="flex items-center gap-3 mb-4 md:mb-0">
-          <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center p-1 shadow-sm">
-            <svg className="w-full h-full text-[#38A169]" viewBox="0 0 100 100" fill="currentColor">
-              <circle cx="50" cy="50" r="45" fill="white" stroke="#38A169" strokeWidth="3"/>
+      {/* Top Header - Sesuai dengan Login User */}
+      <header className="w-full bg-gradient-to-r from-blue-900 to-indigo-800 text-white py-4 px-6 md:px-12 flex flex-col md:flex-row items-center justify-between z-20 shadow-lg">
+        <div className="flex items-center gap-3 mb-4 md:mb-0 cursor-pointer group" onClick={() => navigate('/')}>
+          <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center p-1 shadow-inner transform group-hover:scale-105 transition-transform duration-200">
+            <svg className="w-full h-full text-indigo-600" viewBox="0 0 100 100" fill="currentColor">
+              <circle cx="50" cy="50" r="45" fill="white" stroke="#4F46E5" strokeWidth="3"/>
               <path d="M50 20 L25 40 L25 80 L75 80 L75 40 Z" fill="none" stroke="#4299E1" strokeWidth="3"/>
               <path d="M50 20 L50 80" stroke="#4299E1" strokeWidth="3"/>
-              <path d="M50 35 L40 45 L50 55 L60 45 Z" fill="#38A169"/>
+              <path d="M35 50 L65 50" stroke="#4F46E5" strokeWidth="3"/>
+              <path d="M35 65 L65 65" stroke="#4F46E5" strokeWidth="3"/>
+              <path d="M50 35 L40 45 L50 55 L60 45 Z" fill="#4F46E5"/>
             </svg>
           </div>
-          <h1 className="font-bold text-lg text-white tracking-wide">Bookugers Library Management</h1>
+          <h1 className="font-extrabold text-base md:text-xl tracking-wide">Bookugers Library</h1>
         </div>
 
-        <nav className="flex items-center gap-6 text-white text-xs font-semibold">
-          <button onClick={() => navigate('/')} className="flex items-center gap-1 hover:text-gray-200 transition-colors">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+        <nav className="flex items-center gap-8 text-sm font-semibold">
+          <button onClick={() => navigate('/')} className="flex items-center gap-2 hover:text-blue-200 transition-colors">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
             Home
           </button>
-          <button onClick={() => navigate('/about')} className="flex items-center gap-1 hover:text-gray-200 transition-colors">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          <button onClick={() => navigate('/about')} className="flex items-center gap-2 hover:text-blue-200 transition-colors">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
             About Us
           </button>
         </nav>
       </header>
 
       {/* Main Content Area */}
-      <main className="relative flex-grow flex flex-col items-center justify-center py-12 md:py-20 px-4">
-        {/* Background Image Container */}
+      <main className="relative w-full flex-grow flex flex-col items-center justify-center min-h-[650px] py-12">
+        {/* Background Image & Overlay */}
         <div className="absolute inset-0 z-0">
           <img src={loginBg} alt="Library Background" className="w-full h-full object-cover" />
-          <div className="absolute inset-0 bg-black/20"></div> 
+          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-[2px]"></div>
         </div>
 
-        {/* Welcome Text */}
-        <div className="relative z-10 text-center text-gray-900 mb-8 drop-shadow-md bg-white/70 backdrop-blur-sm p-4 rounded-xl">
-          <h2 className="text-3xl font-extrabold mb-1 tracking-tight">Welcome to Bookugers</h2>
-          <p className="text-sm font-semibold text-gray-800">Your gateway to endless reading adventures.</p>
+        {/* Floating Text */}
+        <div className="relative z-10 text-center text-white mb-8 px-4">
+          <h2 className="text-4xl md:text-5xl font-extrabold mb-3 drop-shadow-lg tracking-tight">Login Page</h2>
+          <p className="text-lg md:text-xl font-medium text-slate-200 drop-shadow-md">Authorized library personnel only.</p>
         </div>
 
-        {/* Login Form Card */}
-        <div className="relative z-10 w-full max-w-md bg-white shadow-2xl rounded-sm overflow-hidden">
-          
-          <div className="py-4 text-center">
-            <h3 className="text-xl font-bold text-black tracking-wide">Admin Login</h3>
+        {/* Login Box */}
+        <div className="relative z-10 bg-white/95 backdrop-blur-md w-[90%] max-w-[420px] px-8 py-10 shadow-2xl rounded-3xl border border-white/40">
+          <div className="text-center mb-8">
+            <h2 className="text-3xl font-extrabold text-slate-800">Admin Login</h2>
+            <p className="text-sm text-slate-500 mt-2">Enter your credentials to access the dashboard</p>
           </div>
-          
-          <div className="w-full h-0.5 bg-black mb-6"></div>
 
-          <form className="flex flex-col gap-5 px-8 pb-8" onSubmit={handleSubmit}>
+          <form className="flex flex-col gap-5" onSubmit={handleSubmit}>
             
-            {/* Tampilkan pesan error jika ada */}
-            {errorMsg && (
-              <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-2 rounded text-xs font-semibold text-center">
-                {errorMsg}
+            {errors.server && (
+              <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-xl text-sm font-semibold text-center shadow-sm">
+                {errors.server}
               </div>
             )}
 
             {/* Email Input */}
-            <div className="flex flex-col gap-2">
-              <label className="text-sm font-bold text-black">Email (Binus Domain)</label>
-              <input 
-                type="email" 
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="Enter your email (@binus.ac.id)" 
-                required
-                className="w-full border border-gray-300 rounded px-4 py-2.5 text-sm text-gray-700 outline-none focus:border-[#C1272D] focus:ring-1 focus:ring-[#C1272D] transition-colors"
-              />
+            <div className="flex flex-col gap-1.5">
+              <label className="text-sm font-bold text-slate-700 ml-1">Email (Binus Domain)</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                  {/* Email Icon */}
+                  <svg className="h-5 w-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                  </svg>
+                </div>
+                <input 
+                  type="email" 
+                  value={email}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    if (errors.email) setErrors(prev => ({ ...prev, email: '' }));
+                  }}
+                  placeholder="admin@binus.ac.id" 
+                  className={`w-full pl-11 bg-slate-50 border ${errors.email ? 'border-red-500 focus:ring-red-500' : 'border-slate-200 focus:border-indigo-500 focus:ring-indigo-500/20'} rounded-xl px-4 py-3 text-sm outline-none focus:ring-4 focus:bg-white transition-all duration-200 placeholder-slate-400`}
+                />
+              </div>
+              {errors.email && <span className="text-xs text-red-500 font-medium ml-1">{errors.email}</span>}
             </div>
 
-            {/* Password Input (Hanya UI statis karena pakai SSO dummy) */}
-            <div className="flex flex-col gap-2">
-              <label className="text-sm font-bold text-black">Password</label>
-              <input 
-                type="password" 
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Enter your password" 
-                required
-                className="w-full border border-gray-300 rounded px-4 py-2.5 text-sm text-gray-700 outline-none focus:border-[#C1272D] focus:ring-1 focus:ring-[#C1272D] transition-colors"
-              />
+            {/* Password Input with Show/Hide Toggle */}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-sm font-bold text-slate-700 ml-1">Password</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                  {/* Lock Icon */}
+                  <svg className="h-5 w-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                  </svg>
+                </div>
+                <input 
+                  type={showPassword ? "text" : "password"} 
+                  value={password}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    if (errors.password) setErrors(prev => ({ ...prev, password: '' }));
+                  }}
+                  placeholder="Enter your password" 
+                  className={`w-full pl-11 pr-12 bg-slate-50 border ${errors.password ? 'border-red-500 focus:ring-red-500' : 'border-slate-200 focus:border-indigo-500 focus:ring-indigo-500/20'} rounded-xl px-4 py-3 text-sm outline-none focus:ring-4 focus:bg-white transition-all duration-200 placeholder-slate-400`}
+                />
+                
+                {/* Toggle Eye Icon Button */}
+                <button 
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-indigo-600 focus:outline-none transition-colors"
+                >
+                  {showPassword ? (
+                    // Eye Slash Icon (Hide)
+                    <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                    </svg>
+                  ) : (
+                    // Eye Icon (Show)
+                    <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                    </svg>
+                  )}
+                </button>
+              </div>
+              {errors.password && <span className="text-xs text-red-500 font-medium ml-1">{errors.password}</span>}
             </div>
 
-            {/* Sign In Button */}
-            <button 
-              type="submit" 
-              disabled={isLoading}
-              className={`w-full font-bold text-sm py-3 mt-2 rounded transition-colors tracking-wide ${
-                isLoading ? 'bg-gray-400 cursor-not-allowed' : 'bg-black text-white hover:bg-gray-800'
-              }`}
-            >
-              {isLoading ? 'Processing...' : 'Sign In'}
-            </button>
-
-            {/* Links */}
-            <div className="flex flex-col items-center gap-3 mt-2">
+            {/* Submit Buttons */}
+            <div className="flex flex-col items-center gap-4 mt-6">
               <button 
-                type="button" 
-                onClick={() => navigate('/login')} 
-                className="text-xs text-gray-500 font-semibold hover:text-black transition-colors mt-2"
+                type="submit" 
+                disabled={isLoading}
+                className={`w-full text-white font-bold text-sm py-3.5 rounded-xl transition-all duration-300 shadow-md hover:shadow-lg hover:-translate-y-0.5 tracking-wide ${isLoading ? 'bg-slate-400 cursor-not-allowed shadow-none hover:translate-y-0' : 'bg-indigo-600 hover:bg-indigo-700'}`}
               >
-                Login as User instead
+                {isLoading ? (
+                  <div className="flex items-center justify-center gap-2">
+                    <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Authenticating...
+                  </div>
+                ) : 'Secure Sign In'}
+              </button>
+
+              <div className="relative flex py-2 items-center w-full">
+                <div className="flex-grow border-t border-slate-200"></div>
+                <span className="flex-shrink-0 mx-4 text-slate-400 text-xs font-semibold uppercase tracking-wider">Or</span>
+                <div className="flex-grow border-t border-slate-200"></div>
+              </div>
+
+              <button 
+                type="button"
+                onClick={() => navigate('/login')}
+                className="w-full bg-white border-2 border-slate-200 text-slate-700 font-bold text-sm py-3 rounded-xl hover:bg-slate-50 hover:border-slate-300 hover:text-indigo-700 transition-all duration-200"
+              >
+                Login as Student
               </button>
             </div>
-
           </form>
         </div>
       </main>
 
-      {/* Memanggil Komponen Footer yang sudah dipisah */}
       <Footer />
-      
     </div>
   );
 };
