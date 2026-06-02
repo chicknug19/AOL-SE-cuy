@@ -8,6 +8,7 @@ import LoginPage from './pages/LoginPage';
 import AboutUsPage from './pages/AboutUsPage';
 import SearchPage from './pages/SearchPage';
 import BookDetailPage from './pages/BookDetailPage';
+import CatalogMemberPage from './pages/CatalogMemberPage';
 
 // Import halaman Admin
 import AdminLoginPage from './pages/AdminLoginPage';
@@ -30,6 +31,7 @@ const App = () => {
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/about" element={<AboutUsPage />} />
         <Route path="/search" element={<SearchPage />} />
+        <Route path="/explore" element={<CatalogMemberPage />} />
         {/* URL dinamis untuk detail buku (id akan berubah-ubah) */}
         <Route path="/book/:id" element={<BookDetailPage />} /> 
 
