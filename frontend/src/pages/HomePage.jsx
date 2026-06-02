@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
-import heroBook from '../assets/hero_book.png';
-import book1 from '../assets/book_1.png';
 
 const HomePage = ({ onLogout }) => {
   const navigate = useNavigate();
@@ -15,22 +13,21 @@ const HomePage = ({ onLogout }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [allBooks, setAllBooks] = useState([]);
 
+  // --- STATE UNTUK CAROUSEL SLIDER ---
+  const [currentSlide, setCurrentSlide] = useState(0);
+
   useEffect(() => {
     const fetchUserDashboard = async () => {
       try {
-        // 1. Ambil token dari memori browser
         const token = localStorage.getItem('token');
         if (!token) {
           navigate('/login');
           return;
         }
 
-        // 2. Decode Token manual untuk mendapatkan User ID (Standar Industri)
         const payload = JSON.parse(atob(token.split('.')[1]));
-        // Mengambil claim NameIdentifier (ID User) dari JWT ASP.NET
         const userId = payload["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"] || payload.nameid;
 
-        // 3. Tarik data profil dan transaksi secara paralel
         const [userRes, trxRes, booksRes] = await Promise.all([
           api.get(`/user/${userId}`),
           api.get(`/transaksi/user/${userId}`),
@@ -39,15 +36,13 @@ const HomePage = ({ onLogout }) => {
 
         if (userRes.data.role === "Admin") {
           navigate('/admin/dashboard');
-          return; // Hentikan proses render halaman member
+          return; 
         }
-
 
         setUserData(userRes.data);
         setAllBooks(booksRes.data); 
         const allTransactions = trxRes.data;
 
-        // 4. Olah Data Transaksi
         const today = new Date();
         let currentFines = 0;
         let dueSoonCount = 0;
@@ -59,7 +54,6 @@ const HomePage = ({ onLogout }) => {
             currentlyBorrowed.push(trx);
             currentFines += (trx.denda || 0);
 
-            // Hitung buku yang harus dikembalikan dalam 3 hari ke depan
             const dueDate = new Date(trx.batasKembali);
             const diffDays = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24));
             if (diffDays >= 0 && diffDays <= 3) {
@@ -79,7 +73,6 @@ const HomePage = ({ onLogout }) => {
 
       } catch (error) {
         console.error("Gagal memuat dashboard user:", error);
-        // Jika token tidak valid / expired, paksa login ulang
         localStorage.removeItem('token');
         navigate('/login');
       } finally {
@@ -90,46 +83,78 @@ const HomePage = ({ onLogout }) => {
     fetchUserDashboard();
   }, [navigate]);
 
-  const handleSearchSubmit = (e) => {
-    if (e.key === 'Enter' && query.trim() !== '') {
-      navigate(`/search?q=${query}`);
+  // Logika Rekomendasi Pencarian
+  const recommendations = query.trim() === '' ? [] : allBooks
+    .filter(b => b.judul.toLowerCase().includes(query.toLowerCase()))
+    .sort((a, b) => a.judul.localeCompare(b.judul))
+    .slice(0, 5); 
+
+  // --- LOGIKA PROGRESS BAR CERDAS ---
+  // Sekarang membutuhkan Tanggal Pinjam & Batas Kembali untuk kalkulasi presisi
+  const calculateDaysRemaining = (dueDateString, borrowDateString) => {
+    const today = new Date();
+    const dueDate = new Date(dueDateString);
+    const borrowDate = new Date(borrowDateString);
+    
+    // Hitung total durasi peminjaman (biasanya 7 hari dari backend)
+    const totalDuration = Math.max(1, Math.ceil((dueDate - borrowDate) / (1000 * 60 * 60 * 24)));
+    
+    // Hitung sisa hari
+    const diffDays = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24));
+    
+    // Hitung persentase waktu yang SUDAH BERLALU (Mulai dari 0% ke 100%)
+    const passedDays = totalDuration - diffDays;
+    let percentage = (passedDays / totalDuration) * 100;
+    
+    if (percentage < 0) percentage = 0;
+    if (percentage > 100) percentage = 100;
+
+    // Logika Warna Responsif:
+    let colorClass = 'bg-green-500'; // Default hijau (masih awal-awal)
+    
+    if (diffDays <= 2 && diffDays >= 0) {
+      colorClass = 'bg-red-500'; // Sisa 2 hari = Merah
+    } else if (diffDays <= (totalDuration / 2)) {
+      colorClass = 'bg-yellow-400'; // Sisa setengah waktu (misal sisa 3 atau 4 hari) = Kuning
     }
+
+    if (diffDays < 0) {
+      colorClass = 'bg-red-700'; // Sudah terlambat (Overdue)
+      percentage = 100; // Bar penuh merah gelap
+    }
+
+    return { days: diffDays, percentage, colorClass };
   };
 
-  // Helper untuk memformat tanggal
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
   };
 
-  // Helper menghitung sisa hari dan persentase progress bar
-  const calculateDaysRemaining = (dueDateString) => {
-    const today = new Date();
-    const dueDate = new Date(dueDateString);
-    const diffDays = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24));
-    
-    // Asumsi durasi pinjam standar 14 hari untuk hitung persentase
-    const percentage = diffDays > 0 ? Math.min((diffDays / 14) * 100, 100) : 0;
-    
-    return { days: diffDays, percentage };
+  // --- FUNGSI NAVIGASI CAROUSEL ---
+  // Slider SEKARANG SELALU menampilkan 5 buku pertama dari katalog sebagai "Featured"
+  const carouselItems = allBooks.slice(0, 5);
+
+  const nextSlide = () => {
+    setCurrentSlide((prev) => (prev === carouselItems.length - 1 ? 0 : prev + 1));
   };
 
-  // Logika Rekomendasi Pencarian
-  const recommendations = query.trim() === '' ? [] : allBooks
-    .filter(b => b.judul.toLowerCase().includes(query.toLowerCase()))
-    .sort((a, b) => a.judul.localeCompare(b.judul)) // Urutkan sesuai abjad
-    .slice(0, 5); // Ambil maksimal 5 teratas
+  const prevSlide = () => {
+    setCurrentSlide((prev) => (prev === 0 ? carouselItems.length - 1 : prev - 1));
+  };
 
 
   if (isLoading) {
     return <div className="min-h-screen flex justify-center items-center bg-[#F2FBFA] font-bold text-gray-500">Memuat Dashboard...</div>;
   }
 
+  // Tentukan item yang sedang aktif di layar
+  const currentCarouselBook = carouselItems[currentSlide];
+
   return (
     <div className="w-full min-h-screen bg-[#F2FBFA] font-sans text-gray-800 pb-12">
       
       {/* Top Navigation Bar */}
       <header className="bg-white py-3 px-6 md:px-12 flex flex-col md:flex-row items-center justify-between shadow-sm sticky top-0 z-50">
-        
         <div className="flex items-center gap-3 mb-4 md:mb-0">
           <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center p-1 shadow-sm border border-gray-100">
             <svg className="w-full h-full text-[#38A169]" viewBox="0 0 100 100" fill="currentColor">
@@ -145,11 +170,8 @@ const HomePage = ({ onLogout }) => {
           </div>
         </div>
 
-        {/* Search Bar Wrapper */}
         <div className="relative w-full max-w-md mb-4 md:mb-0">
           <div className="w-full bg-white rounded-full flex items-center px-4 py-2 shadow-sm border border-gray-200 focus-within:border-blue-400 transition-colors">
-            
-            {/* Kaca Pembesar: Sekarang akan selalu navigasi walau kosong */}
             <svg 
               onClick={() => navigate(`/search?q=${query}`)}
               className="w-4 h-4 text-gray-500 flex-shrink-0 cursor-pointer hover:text-blue-500 transition-colors" 
@@ -157,7 +179,6 @@ const HomePage = ({ onLogout }) => {
             >
               <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
-            
             <input 
               type="text" 
               placeholder="Search for books, authors, or topics" 
@@ -170,7 +191,6 @@ const HomePage = ({ onLogout }) => {
             />
           </div>
 
-          {/* Dropdown Rekomendasi Melayang */}
           {recommendations.length > 0 && (
             <div className="absolute top-full mt-2 left-0 w-full bg-white border border-gray-200 shadow-xl rounded-xl overflow-hidden z-50">
               {recommendations.map(book => (
@@ -205,9 +225,8 @@ const HomePage = ({ onLogout }) => {
 
       <main className="max-w-7xl mx-auto px-6 md:px-12 mt-8">
         
-        {/* Alert Banner (Dinamic) */}
         {stats.dueSoon > 0 && (
-          <div className="bg-[#FFF4E5] border border-[#F6AD55] rounded-lg p-4 mb-8 flex items-start gap-4">
+          <div className="bg-[#FFF4E5] border border-[#F6AD55] rounded-lg p-4 mb-8 flex items-start gap-4 shadow-sm">
             <div className="text-[#DD6B20] mt-0.5">
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
@@ -220,25 +239,44 @@ const HomePage = ({ onLogout }) => {
           </div>
         )}
 
-        {/* Hero Carousel */}
-        <div className="relative w-full h-[300px] md:h-[400px] bg-[#9DBE99] rounded-xl overflow-hidden mb-10 flex justify-center items-center">
-          <img 
-            src={activeBooks.length > 0 && activeBooks[0].coverUrl ? activeBooks[0].coverUrl : "https://placehold.co/400x600/C1272D/ffffff?text=Bookugers"} 
-            alt="Featured Book" 
-            className="h-[90%] md:h-[95%] object-contain shadow-2xl z-10 rounded-xl" 
-            onError={(e) => { e.target.src = "https://placehold.co/400x600/C1272D/ffffff?text=Bookugers"; }}
-          />
-          <button className="absolute left-4 md:left-8 top-1/2 -translate-y-1/2 w-12 h-12 bg-black/30 hover:bg-black/50 rounded-full flex items-center justify-center text-white transition-colors z-20">
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7"/></svg>
-          </button>
-          <button className="absolute right-4 md:right-8 top-1/2 -translate-y-1/2 w-12 h-12 bg-black/30 hover:bg-black/50 rounded-full flex items-center justify-center text-white transition-colors z-20">
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7"/></svg>
-          </button>
+        {/* --- CAROUSEL SLIDER AKTIF --- */}
+        <div className="relative w-full h-[300px] md:h-[400px] bg-[#9DBE99] rounded-xl overflow-hidden mb-10 flex justify-center items-center shadow-md">
+          {currentCarouselBook ? (
+            <>
+              <img 
+                src={currentCarouselBook.coverUrl || "https://placehold.co/400x600/C1272D/ffffff?text=Bookugers"} 
+                alt="Featured Book" 
+                onClick={() => navigate(`/book/${currentCarouselBook.id}`)}
+                className="h-[90%] md:h-[95%] object-contain shadow-2xl z-10 rounded-xl cursor-pointer transition-transform duration-300 hover:scale-105" 
+                onError={(e) => { e.target.src = "https://placehold.co/400x600/C1272D/ffffff?text=Bookugers"; }}
+              />
+              
+              {/* Tampilkan panah navigasi hanya jika item lebih dari 1 */}
+              {carouselItems.length > 1 && (
+                <>
+                  <button onClick={prevSlide} className="absolute left-4 md:left-8 top-1/2 -translate-y-1/2 w-12 h-12 bg-black/30 hover:bg-black/60 rounded-full flex items-center justify-center text-white transition-colors z-20">
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7"/></svg>
+                  </button>
+                  <button onClick={nextSlide} className="absolute right-4 md:right-8 top-1/2 -translate-y-1/2 w-12 h-12 bg-black/30 hover:bg-black/60 rounded-full flex items-center justify-center text-white transition-colors z-20">
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7"/></svg>
+                  </button>
+                  
+                  {/* Titik indikator di bawah slider */}
+                  <div className="absolute bottom-4 flex gap-2 z-20">
+                    {carouselItems.map((_, idx) => (
+                      <div key={idx} className={`w-2.5 h-2.5 rounded-full transition-colors ${idx === currentSlide ? 'bg-white' : 'bg-white/40'}`} />
+                    ))}
+                  </div>
+                </>
+              )}
+            </>
+          ) : (
+            <span className="text-white font-bold text-xl">Welcome to Bookugers</span>
+          )}
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           
-          {/* Left Column: My Books */}
           <div className="lg:col-span-8">
             <h2 className="font-bold text-lg mb-4">My Borrowed Books</h2>
             
@@ -250,7 +288,8 @@ const HomePage = ({ onLogout }) => {
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 items-start">
                 {activeBooks.map((trx) => {
-                  const timeInfo = calculateDaysRemaining(trx.batasKembali);
+                  // Kirim tanggal pinjam untuk hitung persentase presisi
+                  const timeInfo = calculateDaysRemaining(trx.batasKembali, trx.tanggalPinjam);
                   
                   return (
                     <div 
@@ -281,15 +320,16 @@ const HomePage = ({ onLogout }) => {
                               Overdue by {Math.abs(timeInfo.days)} Days
                             </div>
                           ) : (
-                            <div className="flex items-center gap-1 text-[10px] text-gray-500 mb-2">
+                            <div className="flex items-center gap-1 text-[10px] text-gray-600 font-bold mb-2">
                               <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                               {timeInfo.days} Days Remaining
                             </div>
                           )}
 
+                          {/* --- PROGRESS BAR CERDAS DI SINI --- */}
                           <div className="w-full h-1.5 bg-gray-200 rounded-full overflow-hidden">
                             <div 
-                              className={`h-full ${timeInfo.days < 0 ? 'bg-red-500' : timeInfo.days <= 3 ? 'bg-yellow-400' : 'bg-green-500'}`} 
+                              className={`h-full transition-all duration-700 ease-out ${timeInfo.colorClass}`} 
                               style={{ width: `${timeInfo.percentage}%` }}
                             ></div>
                           </div>
@@ -302,10 +342,8 @@ const HomePage = ({ onLogout }) => {
             )}
           </div>
 
-          {/* Right Column: Widgets */}
           <div className="lg:col-span-4 flex flex-col gap-6 mt-11">
             
-            {/* Outstanding Fines Widget */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex flex-col items-center text-center">
               <h3 className="font-bold text-sm text-gray-900 mb-4">Outstanding Fines</h3>
               
@@ -328,7 +366,6 @@ const HomePage = ({ onLogout }) => {
               )}
             </div>
 
-            {/* Digital Member ID Widget */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex flex-col items-center text-center">
               <h3 className="font-bold text-sm text-gray-900 mb-4">Digital Member ID</h3>
               <div className="w-full bg-[#E6FFFA] rounded-xl p-4 flex flex-col items-center">
@@ -361,7 +398,6 @@ const HomePage = ({ onLogout }) => {
               </div>
             </div>
 
-            {/* Quick Stats Widget */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
               <h3 className="font-bold text-sm text-gray-900 mb-5">Quick Stats</h3>
               <div className="flex flex-col gap-4">
