@@ -6,13 +6,16 @@ import AdminSidebar from '../components/AdminSidebar';
 const AdminHomePage = ({ onLogout }) => {
   const navigate = useNavigate(); 
 
-  // State untuk menampung data dari database
+  // State untuk menampung data STATISTIK dari /dashboard
   const [dashboardData, setDashboardData] = useState({
     totalBooks: 0,
     borrowedBooks: 0,
-    activeMembers: 0,
-    recentTransactions: []
+    activeMembers: 0
   });
+
+  // State BARU untuk menampung SEMUA DATA TRANSAKSI dari /transaksi
+  const [transactions, setTransactions] = useState([]);
+  
   const [isLoading, setIsLoading] = useState(true);
 
   // --- STATE UNTUK TABLE CONTROLS ---
@@ -23,7 +26,7 @@ const AdminHomePage = ({ onLogout }) => {
   const [itemsPerPage, setItemsPerPage] = useState(5);
 
   useEffect(() => {
-    const fetchDashboard = async () => {
+    const fetchDashboardAndTransactions = async () => {
       try {
         const token = localStorage.getItem('token');
         if (!token) {
@@ -40,10 +43,17 @@ const AdminHomePage = ({ onLogout }) => {
           return;
         }
 
-        const response = await api.get('/dashboard');
-        setDashboardData(response.data);
+        // FETCH PARALEL: Ambil statistik dashboard DAN semua transaksi sekaligus
+        const [dashRes, trxRes] = await Promise.all([
+          api.get('/dashboard'),
+          api.get('/transaksi') // <-- Mengambil seluruh riwayat transaksi
+        ]);
+
+        setDashboardData(dashRes.data);
+        setTransactions(trxRes.data); // Simpan semua transaksi ke state baru
+
       } catch (error) {
-        console.error("Gagal memuat data dashboard:", error);
+        console.error("Gagal memuat data:", error);
         localStorage.removeItem('token');
         navigate('/admin');
       } finally {
@@ -51,7 +61,7 @@ const AdminHomePage = ({ onLogout }) => {
       }
     };
 
-    fetchDashboard();
+    fetchDashboardAndTransactions();
   }, [navigate]);
 
   // Format tanggal agar lebih rapi
@@ -71,14 +81,14 @@ const AdminHomePage = ({ onLogout }) => {
   };
 
   // --- LOGIKA FILTER, SORTING & PAGINATION ---
-  let processedTransactions = dashboardData.recentTransactions.filter(trx => {
+  // Gunakan state 'transactions' yang berisi SEMUA data, bukan 'recentTransactions' lagi
+  let processedTransactions = transactions.filter(trx => {
     const searchLower = searchTerm.toLowerCase();
     const matchesSearch = 
       (trx.namaUser && trx.namaUser.toLowerCase().includes(searchLower)) ||
       (trx.judulBuku && trx.judulBuku.toLowerCase().includes(searchLower)) ||
       (trx.userId && trx.userId.toString().includes(searchLower));
     
-    // Filter tetap menggunakan kata asli dari backend ("Berjalan", dll)
     const matchesStatus = statusFilter === 'All' || trx.statusTransaksi === statusFilter;
 
     return matchesSearch && matchesStatus;
@@ -187,7 +197,6 @@ const AdminHomePage = ({ onLogout }) => {
                   className="w-full bg-transparent text-sm font-medium text-gray-700 outline-none appearance-none cursor-pointer pr-6"
                 >
                   <option value="All">All Statuses</option>
-                  {/* Valuenya tetap bahasa Indonesia untuk API, tapi textnya bahasa Inggris */}
                   <option value="Berjalan">Active</option>
                   <option value="Terlambat">Overdue</option>
                   <option value="Selesai">Returned</option>
@@ -198,10 +207,10 @@ const AdminHomePage = ({ onLogout }) => {
               </div>
             </div>
 
-            {/* Recent Transactions Table */}
+            {/* Transactions Table */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
               <div className="px-8 py-6 border-b border-gray-200 flex justify-between items-center bg-white">
-                <h2 className="text-lg font-bold text-black tracking-wide">Transactions ({processedTransactions.length})</h2>
+                <h2 className="text-lg font-bold text-black tracking-wide">All Transactions ({processedTransactions.length})</h2>
                 
                 <div className="flex items-center gap-2 text-sm font-medium text-gray-500">
                   Show
@@ -254,7 +263,6 @@ const AdminHomePage = ({ onLogout }) => {
                           <td className="px-6 py-4 text-gray-500">{formatDate(trx.tanggalPinjam)}</td>
                           <td className="px-6 py-4 text-gray-500">{formatDate(trx.batasKembali)}</td>
                           <td className="px-8 py-4 flex justify-center">
-                            {/* Pemanggilan fungsi translateStatus() di sini */}
                             <span className={`inline-flex items-center justify-center px-4 py-1 rounded-full text-[10px] font-bold tracking-wider ${
                               trx.statusTransaksi === 'Berjalan' ? 'bg-blue-100 text-blue-700 border border-blue-200' :
                               trx.statusTransaksi === 'Terlambat' ? 'bg-red-100 text-red-700 border border-red-200' :
