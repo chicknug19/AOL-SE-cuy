@@ -18,8 +18,8 @@ import ReturnBooksPage from './pages/ReturnBooksPage';
 import AdminMembersPage from './pages/AdminMembersPage';
 import CatalogInventoryPage from './pages/CatalogInventoryPage';
 
-// untuk import forgot password
-import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
+import RequestResetPage from './pages/RequestResetPage';
 
 const App = () => {
   return (
@@ -28,7 +28,8 @@ const App = () => {
         {/* Rute Publik & Mahasiswa */}
         <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/reset-password" element={<ForgotPasswordPage />} />
+        <Route path="/forgot-password" element={<RequestResetPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route path="/about" element={<AboutUsPage />} />
         <Route path="/search" element={<SearchPage />} />
         <Route path="/explore" element={<CatalogMemberPage />} />
@@ -38,7 +39,6 @@ const App = () => {
         {/* Rute Khusus Admin */}
         <Route path="/admin" element={<AdminLoginPage />} />
         <Route path="/admin/dashboard" element={<AdminHomePage />} />
-        {/* <Route path="/forgot-password" element={<ForgotPasswordPage />} /> */}
         <Route path="/admin/borrow" element={<AdminBorrowPage />} />
         <Route path="/admin/return" element={<ReturnBooksPage />} />
         <Route path="/admin/members" element={<AdminMembersPage />} />

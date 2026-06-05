@@ -107,7 +107,7 @@ namespace backend.Controllers
         {
             if (id != user.Id)
             {
-                return BadRequest("ID User tidak cocok.");
+                return BadRequest("User ID does not match.");
             }
 
             _context.Entry(user).State = EntityState.Modified;

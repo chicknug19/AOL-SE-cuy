@@ -78,12 +78,12 @@ namespace backend.Controllers
         {
             // Validasi di luar transaksi (untuk menghemat resource database)
             var user = await _context.Users.FindAsync(dto.UserId);
-            if (user == null) return NotFound("User tidak ditemukan.");
-            if (user.IsBlacklisted) return BadRequest("Akses ditolak! Mahasiswa di-blacklist.");
+            if (user == null) return NotFound("User is not found.");
+            if (user.IsBlacklisted) return BadRequest("Access denied! The student is blacklisted.");
 
             var itemBuku = await _context.ItemBukus.FindAsync(dto.ItemBukuId);
-            if (itemBuku == null) return NotFound("Buku fisik tidak ditemukan.");
-            if (itemBuku.Status != "Tersedia") return BadRequest("Fisik buku sedang dipinjam.");
+            if (itemBuku == null) return NotFound("The book is not found.");
+            if (itemBuku.Status != "Tersedia") return BadRequest("The book is being borrowed.");
 
             // MEMULAI TRANSAKSI KEAMANAN
             using var transaction = await _context.Database.BeginTransactionAsync();
@@ -110,7 +110,7 @@ namespace backend.Controllers
                 // JIKA SEMUA BERHASIL, SIMPAN PERMANEN
                 await transaction.CommitAsync();
 
-                return Ok("Buku berhasil dipinjam.");
+                return Ok("The book is successfully borrowed.");
             }
             catch (Exception ex)
             {
@@ -118,7 +118,7 @@ namespace backend.Controllers
                 await transaction.RollbackAsync();
 
                 // Opsional: Log error 'ex.Message' ke file text untuk admin
-                return StatusCode(500, "Terjadi kesalahan internal server. Transaksi dibatalkan secara otomatis.");
+                return StatusCode(500, "An internal server error occurred. The transaction was automatically canceled.");
             }
         }
 
@@ -131,10 +131,10 @@ namespace backend.Controllers
             var transaksi = await _context.Transaksis
                 .FirstOrDefaultAsync(t => t.ItemBukuId == itemBukuId && t.StatusTransaksi == "Berjalan");
 
-            if (transaksi == null) return BadRequest("Buku ini tidak sedang dipinjam oleh siapa pun.");
+            if (transaksi == null) return BadRequest("This book is not currently being borrowed by anyone.");
 
             var itemBuku = await _context.ItemBukus.FindAsync(itemBukuId);
-            if (itemBuku == null) return NotFound("Buku fisik tidak ditemukan di sistem.");
+            if (itemBuku == null) return NotFound("The is book not found in the system.");
 
             // MEMULAI TRANSAKSI KEAMANAN
             using var transaction = await _context.Database.BeginTransactionAsync();
@@ -164,13 +164,13 @@ namespace backend.Controllers
                 // JIKA SEMUA BERHASIL, SIMPAN PERMANEN
                 await transaction.CommitAsync();
 
-                return Ok(new { Message = "Buku berhasil dikembalikan", Data = transaksi });
+                return Ok(new { Message = "The book has been successfully returned", Data = transaksi });
             }
             catch (Exception ex)
             {
                 // JIKA ADA ERROR, KEMBALIKAN DATA SEPERTI SEMULA
                 await transaction.RollbackAsync();
-                return StatusCode(500, "Terjadi kesalahan internal server. Proses pengembalian dibatalkan.");
+                return StatusCode(500, "An internal server error occurred. The refund process was canceled.");
             }
         }
 
@@ -181,7 +181,7 @@ namespace backend.Controllers
         public async Task<IActionResult> PelunasanDenda(int id)
         {
             var transaksi = await _context.Transaksis.FindAsync(id);
-            if (transaksi == null) return NotFound("Transaksi tidak ditemukan.");
+            if (transaksi == null) return NotFound("Transaction not found.");
 
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
@@ -193,12 +193,12 @@ namespace backend.Controllers
 
                 await transaction.CommitAsync();
 
-                return Ok(new { Message = "Denda berhasil dilunasi." });
+                return Ok(new { Message = "The fine was successfully paid." });
             }
             catch (Exception ex)
             {
                 await transaction.RollbackAsync();
-                return StatusCode(500, "Terjadi kesalahan internal. Pembayaran dibatalkan.");
+                return StatusCode(500, "An internal error occurred. Payment was cancelled.");
             }
         }
     }
