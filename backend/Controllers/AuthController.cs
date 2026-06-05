@@ -33,12 +33,12 @@ namespace backend.Controllers
 
             if (user == null || user.Password != request.Password)
             {
-                return Unauthorized("NIM atau Password salah!");
+                return Unauthorized("The NIM or Password is incorrect!");
             }
 
             if (user.IsBlacklisted)
             {
-                return BadRequest("Akun Anda di-blacklist.");
+                return BadRequest("your account is blacklisted.");
             }
 
             var token = GenerateJwtToken(user);
@@ -53,7 +53,7 @@ namespace backend.Controllers
 
             if (user == null || user.Password != request.Password)
             {
-                return Unauthorized("Email atau Password salah, atau Anda bukan Admin!");
+                return Unauthorized("Email or Password is incorrect, or you are not an Admin!");
             }
 
             var token = GenerateJwtToken(user);
@@ -68,7 +68,7 @@ namespace backend.Controllers
             var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == request.Identifier || u.NIM == request.Identifier);
 
             if (user == null)
-                return BadRequest("Email atau NIM tidak ditemukan di sistem.");
+                return BadRequest("Email or NIM not found in the system.");
 
             // Generate Token Acak Sepanjang 64 Karakter
             user.ResetToken = Convert.ToHexString(RandomNumberGenerator.GetBytes(32));
@@ -99,12 +99,12 @@ namespace backend.Controllers
                     From = new MailAddress(senderEmail, "Bookugers Library"),
                     Subject = "Password Reset Request",
                     Body = $@"
-                        <h3>Permintaan Reset Password</h3>
-                        <p>Halo {user.Nama},</p>
-                        <p>Kami menerima permintaan untuk mereset password akun Bookugers kamu. Klik link di bawah ini untuk membuat password baru:</p>
+                        <h3>Password Reset Request</h3>
+                        <p>Hello {user.Nama},</p>
+                        <p>We've received a request to reset your Bookugers account password. Click the link below to create a new password:</p>
                         <a href='{resetLink}' style='display:inline-block; padding:10px 20px; background-color:#4F46E5; color:white; text-decoration:none; border-radius:5px;'>Reset Password</a>
-                        <p>Link ini hanya berlaku selama 15 menit.</p>
-                        <p>Jika kamu tidak pernah meminta reset password, abaikan email ini.</p>
+                        <p>This link is only valid for 15 minutes.</p>
+                        <p>If you never requested a password reset, please ignore this email.</p>
                     ",
                     IsBodyHtml = true,
                 };
@@ -112,7 +112,7 @@ namespace backend.Controllers
                 mailMessage.To.Add(user.Email);
                 await smtpClient.SendMailAsync(mailMessage);
 
-                return Ok("Link reset password berhasil dikirim ke email terdaftar.");
+                return Ok("The password reset link has been successfully sent to the registered email.");
             }
             catch (Exception ex)
             {
@@ -121,7 +121,7 @@ namespace backend.Controllers
                 user.ResetTokenExpires = null;
                 await _context.SaveChangesAsync();
 
-                return StatusCode(500, $"Gagal mengirim email. Pastikan settingan Outlook benar. Error: {ex.Message}");
+                return StatusCode(500, $"Failed to send email. Make sure your gmail settings are correct. Error: {ex.Message}");
             }
         }
 
@@ -133,7 +133,7 @@ namespace backend.Controllers
 
             if (user == null || user.ResetTokenExpires < DateTime.Now)
             {
-                return BadRequest("Token tidak valid atau sudah kedaluwarsa.");
+                return BadRequest("Token is invalid or expired.");
             }
 
             // Ubah password, lalu bersihkan token agar tidak bisa dipakai lagi
@@ -143,7 +143,7 @@ namespace backend.Controllers
 
             await _context.SaveChangesAsync();
 
-            return Ok("Password berhasil diperbarui.");
+            return Ok("Password updated successfully.");
         }
 
         // --- FUNGSI BANTUAN: Generate JWT ---

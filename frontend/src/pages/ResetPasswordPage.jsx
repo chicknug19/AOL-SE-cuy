@@ -5,7 +5,7 @@ import loginBg from '../assets/login_bg.png';
 import Footer from '../components/Footer';
 import LoginHeader from '../components/LoginHeader'; // <-- Memanggil LoginHeader
 
-const ForgotPasswordPage = () => {
+const ResetPasswordPage = () => {
   const navigate = useNavigate();
   
   // Mengambil token rahasia dari URL (Contoh: /forgot-password?token=abc123xxx)
@@ -262,4 +262,4 @@ const ForgotPasswordPage = () => {
   );
 };
 
-export default ForgotPasswordPage;
+export default ResetPasswordPage;

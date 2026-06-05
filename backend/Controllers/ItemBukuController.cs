@@ -38,7 +38,7 @@ namespace backend.Controllers
 
             if (itemBuku == null)
             {
-                return NotFound("Buku dengan barcode tersebut tidak ditemukan.");
+                return NotFound("The book with this barcode is not found.");
             }
 
             return itemBuku;
@@ -60,7 +60,7 @@ namespace backend.Controllers
         {
             if (id != itemBuku.Id)
             {
-                return BadRequest("ID tidak cocok.");
+                return BadRequest("The ID does not match");
             }
 
             _context.Entry(itemBuku).State = EntityState.Modified;

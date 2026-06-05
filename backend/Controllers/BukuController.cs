@@ -43,7 +43,7 @@ namespace backend.Controllers
 
             if (buku == null)
             {
-                return NotFound("Buku tidak ditemukan.");
+                return NotFound("The book is not found.");
             }
 
             var response = new BukuReadDto
@@ -104,7 +104,7 @@ namespace backend.Controllers
 
             if (buku == null)
             {
-                return NotFound("Buku tidak ditemukan.");
+                return NotFound("The book is not found.");
             }
 
             // Perbarui data model berdasarkan DTO dari frontend
@@ -129,14 +129,14 @@ namespace backend.Controllers
 
             if (buku == null)
             {
-                return NotFound("Buku tidak ditemukan.");
+                return NotFound("The book is not found.");
             }
 
             // Cek apakah ada salinan fisik (ItemBuku) yang terikat dengan buku ini
             var hasPhysicalItems = await _context.ItemBukus.AnyAsync(i => i.BukuId == id);
             if (hasPhysicalItems)
             {
-                return BadRequest("Buku tidak bisa dihapus karena masih memiliki salinan fisik di inventaris.");
+                return BadRequest("The book cannot be deleted because it still has a physical copy in inventory.");
             }
 
             _context.Bukus.Remove(buku);

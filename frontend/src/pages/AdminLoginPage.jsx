@@ -174,6 +174,20 @@ const AdminLoginPage = () => {
               {errors.password && <span className="text-xs text-red-500 font-medium ml-1">{errors.password}</span>}
             </div>
 
+            <div className="flex items-center justify-between mt-2 px-1">
+              <div className="flex items-center gap-2">
+                <input type="checkbox" id="remember" className="w-4 h-4 text-indigo-600 border-slate-300 rounded focus:ring-indigo-500 cursor-pointer transition-colors" />
+                <label htmlFor="remember" className="text-sm font-semibold text-slate-600 cursor-pointer select-none">Remember me</label>
+              </div>
+              <button 
+                type="button" 
+                onClick={() => navigate('/forgot-password')} 
+                className="text-sm font-bold text-indigo-600 hover:text-indigo-800 transition-colors focus:outline-none"
+              >
+                Forgot Password?
+              </button>
+            </div>
+
             {/* Submit Buttons */}
             <div className="flex flex-col items-center gap-4 mt-6">
               <button 
@@ -191,6 +205,8 @@ const AdminLoginPage = () => {
                   </div>
                 ) : 'Sign In'}
               </button>
+
+              
 
               <div className="relative flex py-2 items-center w-full">
                 <div className="flex-grow border-t border-slate-200"></div>
