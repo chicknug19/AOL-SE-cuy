@@ -28,7 +28,7 @@ const App = () => {
         {/* Rute Publik & Mahasiswa */}
         <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/reset-password" element={<ForgotPasswordPage />} />
         <Route path="/about" element={<AboutUsPage />} />
         <Route path="/search" element={<SearchPage />} />
         <Route path="/explore" element={<CatalogMemberPage />} />
@@ -38,7 +38,7 @@ const App = () => {
         {/* Rute Khusus Admin */}
         <Route path="/admin" element={<AdminLoginPage />} />
         <Route path="/admin/dashboard" element={<AdminHomePage />} />
-        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        {/* <Route path="/forgot-password" element={<ForgotPasswordPage />} /> */}
         <Route path="/admin/borrow" element={<AdminBorrowPage />} />
         <Route path="/admin/return" element={<ReturnBooksPage />} />
         <Route path="/admin/members" element={<AdminMembersPage />} />
