@@ -91,8 +91,8 @@ namespace backend.Controllers
                     EnableSsl = true,
                 };
 
-                // Ganti localhost:3000 dengan URL Frontend React kamu
-                string resetLink = $"http://localhost:5173/reset-password?token={user.ResetToken}";
+                var frontendResetUrl = _config["FrontendSettings:ResetUrl"];
+                string resetLink = $"{frontendResetUrl}?token={user.ResetToken}";
 
                 var mailMessage = new MailMessage
                 {
