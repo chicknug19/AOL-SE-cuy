@@ -1,11 +1,16 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import api from '../services/api';
 import loginBg from '../assets/login_bg.png';
 import Footer from '../components/Footer';
+import LoginHeader from '../components/LoginHeader'; // <-- Memanggil LoginHeader
 
 const ForgotPasswordPage = () => {
   const navigate = useNavigate();
+  
+  // Mengambil token rahasia dari URL (Contoh: /forgot-password?token=abc123xxx)
+  const [searchParams] = useSearchParams();
+  const resetToken = searchParams.get('token'); 
 
   // State untuk menyimpan input user
   const [newPassword, setNewPassword] = useState('');
@@ -41,6 +46,13 @@ const ForgotPasswordPage = () => {
     let newErrors = { newPassword: '', confirmPassword: '', server: '' };
     let isValid = true;
 
+    // Pastikan URL memiliki token
+    if (!resetToken) {
+      newErrors.server = "Invalid or missing reset token. Please request a new password reset link.";
+      setErrors(newErrors);
+      return;
+    }
+
     // Validasi Password Baru
     if (!newPassword) {
       newErrors.newPassword = "New password is required.";
@@ -65,23 +77,19 @@ const ForgotPasswordPage = () => {
     if (isValid) {
       setIsLoading(true);
       try {
-        // Asumsi: Ada token atau identitas user yang dikirim (misal diambil dari URL Params)
         const payload = {
+          token: resetToken, 
           newPassword: newPassword
         };
 
-        // Ganti endpoint sesuai dengan API kamu
-        // await api.post('/auth/reset-password', payload);
+        await api.post('Auth/reset-password', payload);
 
-        // Simulasi proses delay ke server (Bisa dihapus jika API sudah siap)
-        await new Promise(resolve => setTimeout(resolve, 1500));
-
-        setIsSuccess(true); // Menampilkan pesan sukses
+        setIsSuccess(true);
         
       } catch (error) {
         setErrors({ 
           ...newErrors, 
-          server: error.response?.data || 'Failed to update password. Please try again.' 
+          server: error.response?.data || 'Failed to update password. Token might be expired.' 
         });
       } finally {
         setIsLoading(false);
@@ -92,29 +100,8 @@ const ForgotPasswordPage = () => {
   return (
     <div className="w-full min-h-screen bg-slate-50 font-sans text-gray-800 flex flex-col">
       
-      {/* Top Header */}
-      <header className="w-full bg-gradient-to-r from-blue-900 to-indigo-800 text-white py-4 px-6 md:px-12 flex flex-col md:flex-row items-center justify-between z-20 shadow-lg">
-        <div className="flex items-center gap-3 mb-4 md:mb-0 cursor-pointer group" onClick={() => navigate('/')}>
-          <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center p-1 shadow-inner transform group-hover:scale-105 transition-transform duration-200">
-            <svg className="w-full h-full text-indigo-600" viewBox="0 0 100 100" fill="currentColor">
-              <circle cx="50" cy="50" r="45" fill="white" stroke="#4F46E5" strokeWidth="3"/>
-              <path d="M50 20 L25 40 L25 80 L75 80 L75 40 Z" fill="none" stroke="#4299E1" strokeWidth="3"/>
-              <path d="M50 20 L50 80" stroke="#4299E1" strokeWidth="3"/>
-              <path d="M35 50 L65 50" stroke="#4F46E5" strokeWidth="3"/>
-              <path d="M35 65 L65 65" stroke="#4F46E5" strokeWidth="3"/>
-              <path d="M50 35 L40 45 L50 55 L60 45 Z" fill="#4F46E5"/>
-            </svg>
-          </div>
-          <h1 className="font-extrabold text-base md:text-xl tracking-wide">Bookugers Library</h1>
-        </div>
-
-        <nav className="flex items-center gap-8 text-sm font-semibold">
-          <button onClick={() => navigate('/login')} className="flex items-center gap-2 hover:text-blue-200 transition-colors">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
-            Back to Login
-          </button>
-        </nav>
-      </header>
+      {/* Memanggil Komponen Login Header */}
+      <LoginHeader />
 
       {/* Main Content Area */}
       <main className="relative w-full flex-grow flex flex-col items-center justify-center min-h-[650px] py-12">
@@ -167,6 +154,13 @@ const ForgotPasswordPage = () => {
                   </div>
                 )}
 
+                {/* Info Jika Token Tidak Ditemukan di URL */}
+                {!resetToken && !errors.server && (
+                  <div className="bg-yellow-50 border border-yellow-200 text-yellow-700 px-4 py-3 rounded-xl text-xs font-medium text-center shadow-sm">
+                    Warning: No reset token found in the URL. Submission will fail.
+                  </div>
+                )}
+
                 {/* New Password Input */}
                 <div className="flex flex-col gap-1.5">
                   <label className="text-sm font-bold text-slate-700 ml-1">New Password</label>
@@ -182,7 +176,6 @@ const ForgotPasswordPage = () => {
                       onChange={(e) => {
                         setNewPassword(e.target.value);
                         if (errors.newPassword) setErrors(prev => ({ ...prev, newPassword: '' }));
-                        // Jika saat mengubah password baru dan confirm password tidak sama, trigger pesan
                         if (confirmPassword.length > 0 && e.target.value !== confirmPassword) {
                           setErrors(prev => ({ ...prev, confirmPassword: 'Passwords do not match.' }));
                         } else {

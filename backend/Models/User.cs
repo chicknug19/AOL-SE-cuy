@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System;
 
 namespace backend.Models
 {
@@ -11,18 +12,16 @@ namespace backend.Models
 
         public string Email { get; set; } = string.Empty;
 
-        // --- TAMBAHAN BARU ---
-        // Nullable (?) karena Admin mungkin hanya punya Email, bukan NIM
         public string? NIM { get; set; }
 
-        // Menyimpan password yang sudah di-hash (disandikan)
         public string Password { get; set; } = string.Empty;
-        // ---------------------
 
-        // Role bisa berisi "Admin" atau "Member"
         public string Role { get; set; } = "Member";
 
-        // Jika true, user tidak bisa pinjam buku lagi
         public bool IsBlacklisted { get; set; } = false;
+
+        // --- TAMBAHAN BARU UNTUK FORGOT PASSWORD ---
+        public string? ResetToken { get; set; }
+        public DateTime? ResetTokenExpires { get; set; }
     }
 }
