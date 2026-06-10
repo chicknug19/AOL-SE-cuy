@@ -125,6 +125,31 @@ namespace backend.Controllers
             return NoContent();
         }
 
+        // ========================================================
+        // FUNGSI 6: TOGGLE BLACKLIST (Fitur Cepat untuk Tombol Admin)
+        // ========================================================
+        [HttpPut("toggle-blacklist/{id}")]
+        public async Task<IActionResult> ToggleBlacklist(int id)
+        {
+            var user = await _context.Users.FindAsync(id);
+            if (user == null)
+            {
+                return NotFound("User is not found.");
+            }
+
+            // Balikkan statusnya (Jika true jadi false, jika false jadi true)
+            user.IsBlacklisted = !user.IsBlacklisted;
+
+            await _context.SaveChangesAsync();
+
+            // Kembalikan status terbaru ke frontend
+            return Ok(new
+            {
+                Message = "The status has been updated.",
+                IsBlacklisted = user.IsBlacklisted
+            });
+        }
+
         private bool UserExists(int id)
         {
             return _context.Users.Any(e => e.Id == id);
