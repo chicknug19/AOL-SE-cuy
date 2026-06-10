@@ -42,6 +42,17 @@ const AdminMembersPage = ({ onLogout }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
 
+  // =================================================================
+  // STATE UNTUK MODAL POPUP BLACKLIST
+  // =================================================================
+  const [blacklistModal, setBlacklistModal] = useState({ 
+    isOpen: false, 
+    userId: null, 
+    memberName: '', 
+    isCurrentlyBlacklisted: false 
+  });
+  const [isProcessing, setIsProcessing] = useState(false);
+
   useEffect(() => {
     const fetchMembers = async () => {
       try {
@@ -55,6 +66,43 @@ const AdminMembersPage = ({ onLogout }) => {
     };
     fetchMembers();
   }, []);
+
+  // =================================================================
+  // FUNGSI KONTROL MODAL BLACKLIST
+  // =================================================================
+  const openBlacklistModal = (userId, isCurrentlyBlacklisted, memberName) => {
+    setBlacklistModal({ isOpen: true, userId, memberName, isCurrentlyBlacklisted });
+  };
+
+  const closeBlacklistModal = () => {
+    if (!isProcessing) {
+      setBlacklistModal({ isOpen: false, userId: null, memberName: '', isCurrentlyBlacklisted: false });
+    }
+  };
+
+  const confirmToggleBlacklist = async () => {
+    setIsProcessing(true);
+    try {
+      const response = await api.put(`/user/toggle-blacklist/${blacklistModal.userId}`);
+      
+      setMembers(prevMembers => 
+        prevMembers.map(member => 
+          member.id === blacklistModal.userId 
+            ? { ...member, isBlacklisted: response.data.isBlacklisted } 
+            : member
+        )
+      );
+      
+      closeBlacklistModal();
+    } catch (error) {
+  // Ubah jadi ini untuk melihat error sebenarnya di Console Browser (F12)
+  console.error("Detail Error:", error.response ? error.response.data : error.message);
+  alert(`Error: ${error.response ? error.response.data : error.message}`);
+} finally {
+      setIsProcessing(false);
+    }
+  };
+  // =================================================================
 
   // 1. Logika Search & Status Filter
   let processedMembers = members.filter(member => {
@@ -85,14 +133,12 @@ const AdminMembersPage = ({ onLogout }) => {
   const currentItems = processedMembers.slice(indexOfFirstItem, indexOfLastItem);
   const totalPages = Math.ceil(processedMembers.length / itemsPerPage);
 
-  // Fungsi mengubah Sorting
   const requestSort = (key) => {
     let direction = 'asc';
     if (sortConfig.key === key && sortConfig.direction === 'asc') direction = 'desc';
     setSortConfig({ key, direction });
   };
 
-  // Format ke Rupiah
   const formatRupiah = (angka) => {
     return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(angka);
   };
@@ -101,7 +147,7 @@ const AdminMembersPage = ({ onLogout }) => {
     <div className="flex w-full min-h-screen bg-[#F7F8FA] font-sans text-gray-900">
       <AdminSidebar onLogout={onLogout} />
 
-      <main className="flex-grow p-8 md:p-12 overflow-y-auto">
+      <main className="flex-grow p-8 md:p-12 overflow-y-auto relative">
         <header className="mb-8">
           <h1 className="text-2xl font-bold tracking-tight text-black mb-1">Bookugers Member Management</h1>
           <p className="text-sm text-gray-500 font-medium">Manage And Monitor Library Members</p>
@@ -122,7 +168,6 @@ const AdminMembersPage = ({ onLogout }) => {
             />
           </div>
           
-          {/* Dropdown Status Filter Dinamis */}
           <div className="bg-white rounded-full shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] px-4 py-3 flex items-center min-w-[200px] relative">
             <select 
               value={statusFilter}
@@ -141,14 +186,13 @@ const AdminMembersPage = ({ onLogout }) => {
           </div>
         </div>
 
-        {/* Members Table Card - Dibuat w-full agar melebar penuh */}
+        {/* Members Table Card */}
         <div className="bg-white rounded-2xl shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] border border-gray-100 overflow-hidden w-full">
           <div className="px-8 py-6 border-b border-gray-200 flex justify-between items-center">
             <h2 className="text-lg font-bold text-black tracking-wide">
               Members ({processedMembers.length})
             </h2>
             
-            {/* Pemilih Jumlah Baris (Items Per Page) */}
             <div className="flex items-center gap-2 text-sm font-medium text-gray-500">
               Show
               <select 
@@ -181,13 +225,14 @@ const AdminMembersPage = ({ onLogout }) => {
                     Total Fines {sortConfig.key === 'totalFines' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
                   </th>
                   <th className="px-8 py-4 text-center">Status</th>
+                  <th className="px-6 py-4 text-center">Action</th> 
                 </tr>
               </thead>
               <tbody className="text-sm">
                 {isLoading ? (
-                  <tr><td colSpan="5" className="px-8 py-8 text-center text-gray-500 font-bold">Memuat data...</td></tr>
+                  <tr><td colSpan="6" className="px-8 py-8 text-center text-gray-500 font-bold">Loading data...</td></tr>
                 ) : currentItems.length === 0 ? (
-                  <tr><td colSpan="5" className="px-8 py-8 text-center text-gray-500 font-bold">Member tidak ditemukan.</td></tr>
+                  <tr><td colSpan="6" className="px-8 py-8 text-center text-gray-500 font-bold">No members found.</td></tr>
                 ) : (
                   currentItems.map((member) => (
                     <tr key={member.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
@@ -211,6 +256,18 @@ const AdminMembersPage = ({ onLogout }) => {
                           <span className="inline-flex items-center justify-center px-4 py-1.5 rounded-full text-xs font-bold bg-[#86EFAC] text-[#14532D] w-28 border border-[#14532D]/20">Active / Clear</span>
                         )}
                       </td>
+                      <td className="px-6 py-5 text-center">
+                        <button
+                          onClick={() => openBlacklistModal(member.id, member.isBlacklisted, member.nama)}
+                          className={`px-3 py-1.5 rounded text-xs font-bold text-white transition-colors shadow-sm ${
+                            member.isBlacklisted 
+                              ? 'bg-gray-500 hover:bg-gray-600'
+                              : 'bg-red-500 hover:bg-red-600'
+                          }`}
+                        >
+                          {member.isBlacklisted ? 'Remove Blacklist' : 'Set Blacklist'}
+                        </button>
+                      </td>
                     </tr>
                   ))
                 )}
@@ -218,7 +275,6 @@ const AdminMembersPage = ({ onLogout }) => {
             </table>
           </div>
           
-          {/* Pagination Controls */}
           {totalPages > 1 && (
             <div className="px-8 py-5 border-t border-gray-200 flex justify-between items-center bg-gray-50">
               <p className="text-xs text-gray-500 font-semibold">
@@ -246,8 +302,54 @@ const AdminMembersPage = ({ onLogout }) => {
             </div>
           )}
         </div>
-
       </main>
+
+      {/* ========================================= */}
+      {/* MODAL: KONFIRMASI BLACKLIST               */}
+      {/* ========================================= */}
+      {blacklistModal.isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity" onClick={closeBlacklistModal}></div>
+          <div className="relative bg-white rounded-2xl shadow-2xl p-6 md:p-8 w-full max-w-sm mx-4 transform transition-transform animate-fade-in-up">
+            
+            <div className={`w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4 ${blacklistModal.isCurrentlyBlacklisted ? 'bg-gray-100' : 'bg-red-100'}`}>
+              <svg className={`w-7 h-7 ${blacklistModal.isCurrentlyBlacklisted ? 'text-gray-600' : 'text-red-600'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+            </div>
+            
+            <h3 className="text-xl font-bold text-center text-gray-900 mb-2">Confirm Action</h3>
+            <p className="text-sm text-center text-gray-500 mb-6">
+              Are you sure you want to {blacklistModal.isCurrentlyBlacklisted ? 'remove the blacklist status from' : 'BLACKLIST'} the member:<br/>
+              <span className="font-bold text-black">{blacklistModal.memberName}</span>?
+            </p>
+            
+            <div className="flex gap-3">
+              <button 
+                onClick={closeBlacklistModal}
+                disabled={isProcessing}
+                className="flex-1 px-4 py-2.5 bg-white border border-gray-300 text-gray-700 rounded-xl font-bold text-sm hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={confirmToggleBlacklist}
+                disabled={isProcessing}
+                className={`flex-1 px-4 py-2.5 rounded-xl font-bold text-sm text-white transition-colors ${
+                  isProcessing 
+                    ? 'bg-gray-400 cursor-not-allowed' 
+                    : blacklistModal.isCurrentlyBlacklisted 
+                      ? 'bg-gray-600 hover:bg-gray-700' 
+                      : 'bg-red-600 hover:bg-red-700'
+                }`}
+              >
+                {isProcessing ? 'Processing...' : 'Yes, Confirm'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };
