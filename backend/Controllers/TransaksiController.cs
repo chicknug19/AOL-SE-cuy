@@ -131,7 +131,7 @@ namespace backend.Controllers
             var transaksi = await _context.Transaksis
                 .FirstOrDefaultAsync(t => t.ItemBukuId == itemBukuId && t.StatusTransaksi == "Berjalan");
 
-            if (transaksi == null) return BadRequest("This book is not currently being borrowed by anyone.");
+            if (transaksi == null) return BadRequest("You need to pay the fine first.");
 
             var itemBuku = await _context.ItemBukus.FindAsync(itemBukuId);
             if (itemBuku == null) return NotFound("The is book not found in the system.");
